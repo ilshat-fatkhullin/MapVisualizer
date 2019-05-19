@@ -10,6 +10,10 @@ public class GeoJSONVisualizer : MonoBehaviour
 {
     public GameObject BuildingPrefab;
 
+    public Material WallMaterial;
+
+    public Material RoofMaterial;
+
     public int Zoom;
 
     public float OriginLatitude;
@@ -125,8 +129,8 @@ public class GeoJSONVisualizer : MonoBehaviour
         MeshInfo roofInfo = BuildingPropertiesHelper.GetRoofInfo(polygon, properties, originInMeters);
         MeshInfo wallInfo = BuildingPropertiesHelper.GetWallInfo(polygon, properties, originInMeters);
 
-        InstantiateObject(roofInfo);
-        InstantiateObject(wallInfo);
+        InstantiateObject(roofInfo, RoofMaterial);
+        InstantiateObject(wallInfo, WallMaterial);
     }
 
     private void InstantiateMultiPolygon(MultiPolygon multiPolygon)
@@ -142,16 +146,19 @@ public class GeoJSONVisualizer : MonoBehaviour
         }
     }
 
-    private void InstantiateObject(MeshInfo info)
+    private void InstantiateObject(MeshInfo info, Material material)
     {
         GameObject building = Instantiate(BuildingPrefab);
         MeshFilter filter = building.GetComponent<MeshFilter>();
         Mesh mesh = new Mesh();
         mesh.vertices = info.Vertices;
         mesh.triangles = info.Triangles;
+        mesh.SetUVs(0, new List<Vector3>(info.UVs));
         mesh.RecalculateTangents();
         mesh.RecalculateNormals();
         mesh.RecalculateBounds();
         filter.mesh = mesh;
+        MeshRenderer renderer = building.GetComponent<MeshRenderer>();
+        renderer.material = material;
     }
 }

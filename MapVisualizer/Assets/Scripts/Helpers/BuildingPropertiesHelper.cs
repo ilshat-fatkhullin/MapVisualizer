@@ -36,7 +36,13 @@ public static class BuildingPropertiesHelper
             i++;
         }
 
-        return new MeshInfo(vertices3D, triangles.ToArray());
+        Vector3[] uvs = new Vector3[vertices3D.Length];
+        for (int k = 0; k < uvs.Length; k++)
+        {
+            uvs[k] = new Vector3(vertices3D[k].x, vertices3D[k].z, 0);
+        }
+
+        return new MeshInfo(vertices3D, triangles.ToArray(), uvs);
     }
 
     public static MeshInfo GetWallInfo(BAMCIS.GeoJSON.Polygon polygon, IDictionary<string, dynamic> properties,
@@ -93,7 +99,7 @@ public static class BuildingPropertiesHelper
             }
         }
 
-        return new MeshInfo(vertices.ToArray(), triangles.ToArray());
+        return new MeshInfo(vertices.ToArray(), triangles.ToArray(), vertices.ToArray());
     }
 
     private static PolygonLoops GetPolygonLoopsInMeters(BAMCIS.GeoJSON.Polygon polygon, Vector2 originInMeters)
