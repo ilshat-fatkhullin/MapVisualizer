@@ -122,57 +122,11 @@ public class GeoJSONVisualizer : MonoBehaviour
 
     private void InstantiatePolygon(Polygon polygon, IDictionary<string, dynamic> properties)
     {
-        float height = BuildingPropertiesHelper.GetHeightFromProperties(properties);
+        MeshInfo roofInfo = BuildingPropertiesHelper.GetRoofInfo(polygon, properties, originInMeters);
+        MeshInfo wallInfo = BuildingPropertiesHelper.GetWallInfo(polygon, properties, originInMeters);
 
-        List<Vector3> vertices = new List<Vector3>();
-
-        bool isFirst = true;
-
-        foreach (var linearRing in polygon.Coordinates)
-        {
-            if (!isFirst)
-                break;
-
-            foreach (var position in linearRing.Coordinates)
-            {
-                Vector2 positionInMeters = GeoPositioningHelper.GetMetersFromLatitudeAndLongitude(
-                    position.Latitude, position.Longitude) - originInMeters;
-
-                vertices.Add(new Vector3(positionInMeters.x, 0, positionInMeters.y));
-                vertices.Add(new Vector3(positionInMeters.x, height, positionInMeters.y));
-            }
-
-            isFirst = false;
-        }
-
-        List<int> triangles = new List<int>();
-
-        for (int i = 0; i < vertices.Count - 3; i += 2)
-        {
-            triangles.Add(i + 1);
-            triangles.Add(i + 2);
-            triangles.Add(i);
-
-            triangles.Add(i + 1);
-            triangles.Add(i + 3);
-            triangles.Add(i + 2);                        
-        }
-
-        for (int i = 3; i + 2 < vertices.Count; i += 2)
-        {
-            triangles.Add(1);
-            triangles.Add(i + 2);
-            triangles.Add(i);            
-        }
-
-        for (int i = 2; i + 2 < vertices.Count; i += 2)
-        {
-            triangles.Add(0);
-            triangles.Add(i + 2);
-            triangles.Add(i);            
-        }
-
-        InstantiateObject(vertices.ToArray(), triangles.ToArray());
+        InstantiateObject(roofInfo);
+        InstantiateObject(wallInfo);
     }
 
     private void InstantiateMultiPolygon(MultiPolygon multiPolygon)
@@ -188,14 +142,13 @@ public class GeoJSONVisualizer : MonoBehaviour
         }
     }
 
-
-    private void InstantiateObject(Vector3[] vertices, int[] triangles)
+    private void InstantiateObject(MeshInfo info)
     {
         GameObject building = Instantiate(BuildingPrefab);
         MeshFilter filter = building.GetComponent<MeshFilter>();
         Mesh mesh = new Mesh();
-        mesh.vertices = vertices;
-        mesh.triangles = triangles;
+        mesh.vertices = info.Vertices;
+        mesh.triangles = info.Triangles;
         mesh.RecalculateTangents();
         mesh.RecalculateNormals();
         mesh.RecalculateBounds();
