@@ -5,6 +5,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Networking;
+using static BuildingPropertiesHelper;
 
 public class GeoJSONVisualizer : MonoBehaviour
 {
@@ -126,8 +127,10 @@ public class GeoJSONVisualizer : MonoBehaviour
 
     private void InstantiatePolygon(Polygon polygon, IDictionary<string, dynamic> properties)
     {
-        MeshInfo roofInfo = BuildingPropertiesHelper.GetRoofInfo(polygon, properties, originInMeters);
-        MeshInfo wallInfo = BuildingPropertiesHelper.GetWallInfo(polygon, properties, originInMeters);
+        PolygonLoops polygonLoops = BuildingPropertiesHelper.GetPolygonLoopsInMeters(polygon, originInMeters);
+
+        MeshInfo roofInfo = BuildingPropertiesHelper.GetRoofInfo(polygonLoops, properties, originInMeters);
+        MeshInfo wallInfo = BuildingPropertiesHelper.GetWallInfo(polygonLoops, properties, originInMeters);
 
         InstantiateObject(roofInfo, RoofMaterial);
         InstantiateObject(wallInfo, WallMaterial);

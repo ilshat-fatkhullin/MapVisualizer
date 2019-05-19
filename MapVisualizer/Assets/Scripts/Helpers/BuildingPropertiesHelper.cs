@@ -4,15 +4,13 @@ using UnityEngine;
 
 public static class BuildingPropertiesHelper
 {
-    public static MeshInfo GetRoofInfo(BAMCIS.GeoJSON.Polygon polygon, IDictionary<string, dynamic> properties,
+    public static MeshInfo GetRoofInfo(PolygonLoops polygonLoops, IDictionary<string, dynamic> properties,
         Vector2 originInMeters)
     {
         float height = BuildingPropertiesHelper.GetHeightFromProperties(properties);
 
-        PolygonLoops polygonLoops = GetPolygonLoopsInMeters(polygon, originInMeters);
-
         Vector2[] outerLoop = polygonLoops.OuterLoop;
-        Vector2[][] holeLoops = polygonLoops.InnerLoop;        
+        Vector2[][] holeLoops = polygonLoops.InnerLoops;        
 
         Sebastian.Geometry.Polygon polygon2D;
         if (holeLoops.Length == 0)
@@ -45,15 +43,13 @@ public static class BuildingPropertiesHelper
         return new MeshInfo(vertices3D, triangles.ToArray(), uvs);
     }
 
-    public static MeshInfo GetWallInfo(BAMCIS.GeoJSON.Polygon polygon, IDictionary<string, dynamic> properties,
+    public static MeshInfo GetWallInfo(PolygonLoops polygonLoops, IDictionary<string, dynamic> properties,
         Vector2 originInMeters)
     {
         float height = BuildingPropertiesHelper.GetHeightFromProperties(properties);
 
-        PolygonLoops polygonLoops = GetPolygonLoopsInMeters(polygon, originInMeters);
-
         Vector2[] outerLoop = polygonLoops.OuterLoop;
-        Vector2[][] holeLoops = polygonLoops.InnerLoop;
+        Vector2[][] holeLoops = polygonLoops.InnerLoops;
 
         List<int> triangles = new List<int>();
 
@@ -65,44 +61,47 @@ public static class BuildingPropertiesHelper
             vertices.Add(new Vector3(vertex2D.x, height, vertex2D.y));
         }
 
+        int size = outerLoop.Length * 2;
+
         for (int i = 0; i < outerLoop.Length; i++)
         {
             triangles.Add(i * 2);
-            triangles.Add((i * 2 + 1) % vertices.Count);
-            triangles.Add(((i + 1) * 2) % vertices.Count);
+            triangles.Add((i * 2 + 1) % size);
+            triangles.Add(((i + 1) * 2) % size);
 
-            triangles.Add((i * 2 + 1) % vertices.Count);
-            triangles.Add(((i + 1) * 2 + 1) % vertices.Count);
-            triangles.Add(((i + 1) * 2) % vertices.Count);
+            triangles.Add((i * 2 + 1) % size);
+            triangles.Add(((i + 1) * 2 + 1) % size);
+            triangles.Add(((i + 1) * 2) % size);
         }
 
-        int offset = triangles.Count;
+        int offset = vertices.Count;
 
         foreach (var loop in holeLoops)
         {
-            for (int i = loop.Length - 1; i >= 0; i++)
+            foreach (var vertex2D in loop)
             {
-                var vertex2D = loop[i];
                 vertices.Add(new Vector3(vertex2D.x, 0, vertex2D.y));
                 vertices.Add(new Vector3(vertex2D.x, height, vertex2D.y));
             }
 
-            for (int i = offset; i < outerLoop.Length + offset; i++)
-            {
-                triangles.Add(i * 2);
-                triangles.Add((i * 2 + 1) % vertices.Count);
-                triangles.Add(((i + 1) * 2) % vertices.Count);
+            size = loop.Length * 2;
 
-                triangles.Add((i * 2 + 1) % vertices.Count);
-                triangles.Add(((i + 1) * 2 + 1) % vertices.Count);
-                triangles.Add(((i + 1) * 2) % vertices.Count);
+            for (int i = 0; i < loop.Length; i++)
+            {
+                triangles.Add(offset + (i * 2));
+                triangles.Add(offset + ((i * 2 + 1) % size));
+                triangles.Add(offset + (((i + 1) * 2) % size));
+
+                triangles.Add(offset + ((i * 2 + 1) % size));
+                triangles.Add(offset + (((i + 1) * 2 + 1) % size));
+                triangles.Add(offset + (((i + 1) * 2) % size));                                
             }
         }
 
         return new MeshInfo(vertices.ToArray(), triangles.ToArray(), vertices.ToArray());
     }
 
-    private static PolygonLoops GetPolygonLoopsInMeters(BAMCIS.GeoJSON.Polygon polygon, Vector2 originInMeters)
+    public static PolygonLoops GetPolygonLoopsInMeters(BAMCIS.GeoJSON.Polygon polygon, Vector2 originInMeters)
     {
         Vector2[] outerLoop = null;
         Vector2[][] holeLoops = new Vector2[polygon.Coordinates.Count() - 1][];
@@ -112,28 +111,24 @@ public static class BuildingPropertiesHelper
         int i = 0;
         foreach (var linearRing in polygon.Coordinates)
         {
-            Vector2[] loop = new Vector2[linearRing.Coordinates.Count() - 1];
-
-            int j = 0;
+            List<Vector2> loop = new List<Vector2>(linearRing.Coordinates.Count() - 1);
 
             foreach (var position in linearRing.Coordinates)
             {
                 Vector2 positionInMeters = GeoPositioningHelper.GetMetersFromLatitudeAndLongitude(
                     position.Latitude, position.Longitude) - originInMeters;
-                loop[j] = positionInMeters;
-                j++;
-
-                if (j == loop.Length)
-                    break;
+                loop.Add(positionInMeters);
             }
+
+            loop = loop.Distinct().ToList();
 
             if (isOuterLoop)
             {
-                outerLoop = loop;
+                outerLoop = loop.ToArray();
             }
             else
             {
-                holeLoops[i] = loop;
+                holeLoops[i - 1] = loop.ToArray();
             }
 
             isOuterLoop = false;
@@ -156,7 +151,7 @@ public static class BuildingPropertiesHelper
         }
 
         Debug.Log("Building does not have any property to calculate its height.");
-        return 0;
+        return NumericConstants.FIRST_LEVEL_HEIGHT;
     }
 
     private static float GetHeightFromLevel(int level)
@@ -169,16 +164,36 @@ public static class BuildingPropertiesHelper
         return NumericConstants.FIRST_LEVEL_HEIGHT + (level - 1) * NumericConstants.NON_FIRST_LEVEL_HEIGHT;
     }
 
-    private class PolygonLoops
+    public class PolygonLoops
     {
         public Vector2[] OuterLoop { get; private set; }
 
-        public Vector2[][] InnerLoop { get; private set; }
+        public Vector2[][] InnerLoops { get; private set; }
 
-        public PolygonLoops(Vector2[] outerLoop, Vector2[][] innerLoop)
+        public PolygonLoops(Vector2[] outerLoop, Vector2[][] innerLoops)
         {
             OuterLoop = outerLoop;
-            InnerLoop = innerLoop;
+            InnerLoops = innerLoops;
+        }
+    }
+
+    private class Vector2EqualityComparer : IEqualityComparer<Vector2>
+    {
+        public bool Equals(Vector2 v1, Vector2 v2)
+        {
+            if (v2 == null && v1 == null)
+                return true;
+            else if (v1 == null || v2 == null)
+                return false;
+            else if (v1.x == v2.x && v1.y == v2.y)
+                return true;
+            else
+                return false;
+        }
+
+        public int GetHashCode(Vector2 v)
+        {
+            return (int)v.magnitude;
         }
     }
 }
