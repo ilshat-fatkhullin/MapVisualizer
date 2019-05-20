@@ -194,7 +194,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 68427366}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: -500}
+  m_LocalPosition: {x: -2500, y: 0, z: -2550}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
@@ -324,9 +324,9 @@ MonoBehaviour:
     type: 3}
   WallMaterial: {fileID: 2100000, guid: 0a582a9f621d95046a188fa43e0c0110, type: 2}
   RoofMaterial: {fileID: 2100000, guid: 37da190aea7952541a269873de7bf3cf, type: 2}
-  Zoom: 16
-  OriginLatitude: 55.78473
-  OriginLongitude: 49.11908
+  Zoom: 15
+  OriginLatitude: 55.78733
+  OriginLongitude: 49.12176
 --- !u!4 &322427326
 Transform:
   m_ObjectHideFlags: 0
