@@ -322,7 +322,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   BuildingPrefab: {fileID: 3076484014762704044, guid: 41e4a0a54025e9043893952b8f7f1c59,
     type: 3}
-  WallMaterial: {fileID: 2100000, guid: 0a582a9f621d95046a188fa43e0c0110, type: 2}
+  WallMaterials:
+  - {fileID: 2100000, guid: 0a582a9f621d95046a188fa43e0c0110, type: 2}
+  - {fileID: 2100000, guid: 0a98b165b7ad0054c92ea6cf03b29610, type: 2}
   RoofMaterial: {fileID: 2100000, guid: 37da190aea7952541a269873de7bf3cf, type: 2}
   Zoom: 15
   OriginLatitude: 55.78733
@@ -352,6 +354,8 @@ GameObject:
   - component: {fileID: 534669905}
   - component: {fileID: 534669904}
   - component: {fileID: 534669903}
+  - component: {fileID: 534669906}
+  - component: {fileID: 534669907}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -424,3 +428,33 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &534669906
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 534669902}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cc2c24f01cca2fd4fadfcf4700f1193c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  movementSpeed: 10
+  fastMovementSpeed: 100
+  freeLookSensitivity: 3
+  zoomSensitivity: 10
+  fastZoomSensitivity: 50
+--- !u!114 &534669907
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 534669902}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ff26db721962cdf4a8edcdfa9a767d2a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  profile: {fileID: 11400000, guid: 820edeabb29d45745aad281234ab7b58, type: 2}

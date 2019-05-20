@@ -11,7 +11,7 @@ public class GeoJSONVisualizer : MonoBehaviour
 {
     public GameObject BuildingPrefab;
 
-    public Material WallMaterial;
+    public Material[] WallMaterials;
 
     public Material RoofMaterial;
 
@@ -133,7 +133,7 @@ public class GeoJSONVisualizer : MonoBehaviour
         MeshInfo wallInfo = BuildingPropertiesHelper.GetWallInfo(polygonLoops, properties, originInMeters);
 
         InstantiateObject(roofInfo, RoofMaterial);
-        InstantiateObject(wallInfo, WallMaterial);
+        InstantiateObject(wallInfo, WallMaterials[UnityEngine.Random.Range(0, WallMaterials.Length)]);
     }
 
     private void InstantiateMultiPolygon(MultiPolygon multiPolygon)
