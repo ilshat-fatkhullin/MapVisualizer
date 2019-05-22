@@ -1,25 +1,17 @@
 ﻿using BAMCIS.GeoJSON;
 using Newtonsoft.Json;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Networking;
 using static BuildingPropertiesHelper;
 
-public class GeoJSONVisualizer : MonoBehaviour
-{
+public class GeoJSONBuildingsVisualizer : Visualizer
+{    
     public GameObject BuildingPrefab;
 
     public Material[] WallMaterials;
 
     public Material RoofMaterial;
-
-    public int Zoom;
-
-    public float OriginLatitude;
-
-    public float OriginLongitude;
 
     private FeatureCollection tile;
 
@@ -31,7 +23,7 @@ public class GeoJSONVisualizer : MonoBehaviour
         LoadGeoJSON();
     }
 
-    private string BuildGeoJSONRequest(int x, int y, int z)
+    private string BuildRequest(int x, int y, int z)
     {
         return string.Format(StringConstants.GeoJSONTileRequestPattern,
             Convert.ToString(x), Convert.ToString(y), Convert.ToString(z));
@@ -40,26 +32,11 @@ public class GeoJSONVisualizer : MonoBehaviour
     private void LoadGeoJSON()
     {
         Point2D tile = GeoPositioningHelper.GetTileFromLatitudeAndLongitude(OriginLatitude, OriginLongitude, Zoom);
-        string request = BuildGeoJSONRequest(Zoom, tile.X, tile.Y);
-        StartCoroutine(HttpGetRequest(request));
+        string request = BuildRequest(Zoom, tile.X, tile.Y);
+        StartCoroutine(LoadFile(request));
     }
 
-    IEnumerator HttpGetRequest(string request)
-    {
-        UnityWebRequest www = UnityWebRequest.Get(request);
-        yield return www.SendWebRequest();
-
-        if (www.isNetworkError || www.isHttpError)
-        {
-            Debug.LogError(www.error);
-        }
-        else
-        {
-            OnNetworkResponse(www.downloadHandler.text);
-        }
-    }
-
-    private void OnNetworkResponse(string response)
+    protected override void OnNetworkResponse(string response)
     {
         if (string.IsNullOrEmpty(response))
         {
@@ -129,8 +106,8 @@ public class GeoJSONVisualizer : MonoBehaviour
     {
         PolygonLoops polygonLoops = BuildingPropertiesHelper.GetPolygonLoopsInMeters(polygon, originInMeters);
 
-        MeshInfo roofInfo = BuildingPropertiesHelper.GetRoofInfo(polygonLoops, properties, originInMeters);
-        MeshInfo wallInfo = BuildingPropertiesHelper.GetWallInfo(polygonLoops, properties, originInMeters);
+        MeshInfo roofInfo = BuildingPropertiesHelper.GetRoofInfo(polygonLoops, properties);
+        MeshInfo wallInfo = BuildingPropertiesHelper.GetWallInfo(polygonLoops, properties);
 
         InstantiateObject(roofInfo, RoofMaterial);
         InstantiateObject(wallInfo, WallMaterials[UnityEngine.Random.Range(0, WallMaterials.Length)]);

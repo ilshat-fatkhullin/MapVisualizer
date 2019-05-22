@@ -4,8 +4,7 @@ using UnityEngine;
 
 public static class BuildingPropertiesHelper
 {
-    public static MeshInfo GetRoofInfo(PolygonLoops polygonLoops, IDictionary<string, dynamic> properties,
-        Vector2 originInMeters)
+    public static MeshInfo GetRoofInfo(PolygonLoops polygonLoops, IDictionary<string, dynamic> properties)
     {
         float height = BuildingPropertiesHelper.GetHeightFromProperties(properties);
 
@@ -43,8 +42,7 @@ public static class BuildingPropertiesHelper
         return new MeshInfo(vertices3D, triangles.ToArray(), uvs);
     }
 
-    public static MeshInfo GetWallInfo(PolygonLoops polygonLoops, IDictionary<string, dynamic> properties,
-        Vector2 originInMeters)
+    public static MeshInfo GetWallInfo(PolygonLoops polygonLoops, IDictionary<string, dynamic> properties)
     {
         float height = BuildingPropertiesHelper.GetHeightFromProperties(properties);
 
@@ -120,7 +118,7 @@ public static class BuildingPropertiesHelper
                 loop.Add(positionInMeters);
             }
 
-            loop = loop.Distinct().ToList();
+            loop = loop.Distinct().Reverse().ToList();
 
             if (isOuterLoop)
             {

@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 170076734}
-  m_IndirectSpecularColor: {r: 0, g: 0, b: 0, a: 1}
+  m_IndirectSpecularColor: {r: 0.44657844, g: 0.49641222, b: 0.57481694, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -96,7 +96,8 @@ LightmapSettings:
     m_PVRFilteringAtrousPositionSigmaAO: 1
     m_ShowResolutionOverlay: 1
     m_ExportTrainingData: 0
-  m_LightingDataAsset: {fileID: 0}
+  m_LightingDataAsset: {fileID: 112000000, guid: d523547cfc90a0242a460690365db8e1,
+    type: 2}
   m_UseShadowmask: 1
 --- !u!196 &4
 NavMeshSettings:
@@ -301,6 +302,7 @@ GameObject:
   m_Component:
   - component: {fileID: 322427326}
   - component: {fileID: 322427325}
+  - component: {fileID: 322427327}
   m_Layer: 0
   m_Name: GameController
   m_TagString: GameController
@@ -320,15 +322,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ef7d1ccb8d0e93445adc386818d6c51a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  OriginLatitude: 55.78733
+  OriginLongitude: 49.12176
+  Zoom: 15
   BuildingPrefab: {fileID: 3076484014762704044, guid: 41e4a0a54025e9043893952b8f7f1c59,
     type: 3}
   WallMaterials:
   - {fileID: 2100000, guid: 0a582a9f621d95046a188fa43e0c0110, type: 2}
   - {fileID: 2100000, guid: 0a98b165b7ad0054c92ea6cf03b29610, type: 2}
   RoofMaterial: {fileID: 2100000, guid: 37da190aea7952541a269873de7bf3cf, type: 2}
-  Zoom: 15
-  OriginLatitude: 55.78733
-  OriginLongitude: 49.12176
 --- !u!4 &322427326
 Transform:
   m_ObjectHideFlags: 0
@@ -343,6 +345,21 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &322427327
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 322427324}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 83d45be99a2463c47a343fd6151c47d6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  OriginLatitude: 55.78733
+  OriginLongitude: 49.12176
+  Zoom: 15
 --- !u!1 &534669902
 GameObject:
   m_ObjectHideFlags: 0
