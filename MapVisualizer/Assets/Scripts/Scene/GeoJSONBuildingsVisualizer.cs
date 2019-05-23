@@ -133,10 +133,11 @@ public class GeoJSONBuildingsVisualizer : Visualizer
         Mesh mesh = new Mesh();
         mesh.vertices = info.Vertices;
         mesh.triangles = info.Triangles;
-        mesh.SetUVs(0, new List<Vector3>(info.UVs));
+        mesh.SetUVs(0, new List<Vector2>(info.UVs));
         mesh.RecalculateTangents();
         mesh.RecalculateNormals();
         mesh.RecalculateBounds();
+        mesh.Optimize();
         filter.mesh = mesh;
         MeshRenderer renderer = building.GetComponent<MeshRenderer>();
         renderer.material = material;

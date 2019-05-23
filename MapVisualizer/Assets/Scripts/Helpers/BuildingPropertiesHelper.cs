@@ -33,10 +33,10 @@ public static class BuildingPropertiesHelper
             i++;
         }
 
-        Vector3[] uvs = new Vector3[vertices3D.Length];
+        Vector2[] uvs = new Vector2[vertices3D.Length];
         for (int k = 0; k < uvs.Length; k++)
         {
-            uvs[k] = new Vector3(vertices3D[k].x, vertices3D[k].z, 0);
+            uvs[k] = new Vector3(vertices3D[k].x, vertices3D[k].z);
         }
 
         return new MeshInfo(vertices3D, triangles.ToArray(), uvs);
@@ -44,45 +44,25 @@ public static class BuildingPropertiesHelper
 
     public static MeshInfo GetWallInfo(PolygonLoops polygonLoops, IDictionary<string, dynamic> properties)
     {
-        float height = BuildingPropertiesHelper.GetHeightFromProperties(properties);
-
-        Vector2[] outerLoop = polygonLoops.OuterLoop;
-        Vector2[][] holeLoops = polygonLoops.InnerLoops;
+        float height = GetHeightFromProperties(properties);
 
         List<int> triangles = new List<int>();
-
         List<Vector3> vertices = new List<Vector3>();
 
-        foreach (var vertex2D in outerLoop)
+        foreach (var loop in polygonLoops.AllLoops)
         {
-            vertices.Add(new Vector3(vertex2D.x, 0, vertex2D.y));
-            vertices.Add(new Vector3(vertex2D.x, height, vertex2D.y));
-        }
+            int offset = vertices.Count;
 
-        int size = outerLoop.Length * 2;
-
-        for (int i = 0; i < outerLoop.Length; i++)
-        {
-            triangles.Add(i * 2);
-            triangles.Add((i * 2 + 1) % size);
-            triangles.Add(((i + 1) * 2) % size);
-
-            triangles.Add((i * 2 + 1) % size);
-            triangles.Add(((i + 1) * 2 + 1) % size);
-            triangles.Add(((i + 1) * 2) % size);
-        }
-
-        int offset = vertices.Count;
-
-        foreach (var loop in holeLoops)
-        {
             foreach (var vertex2D in loop)
             {
                 vertices.Add(new Vector3(vertex2D.x, 0, vertex2D.y));
                 vertices.Add(new Vector3(vertex2D.x, height, vertex2D.y));
             }
 
-            size = loop.Length * 2;
+            vertices.Add(vertices[0]);
+            vertices.Add(vertices[1]);
+
+            int size = loop.Length * 2 + 2;
 
             for (int i = 0; i < loop.Length; i++)
             {
@@ -92,11 +72,30 @@ public static class BuildingPropertiesHelper
 
                 triangles.Add(offset + ((i * 2 + 1) % size));
                 triangles.Add(offset + (((i + 1) * 2 + 1) % size));
-                triangles.Add(offset + (((i + 1) * 2) % size));                                
-            }
+                triangles.Add(offset + (((i + 1) * 2) % size));
+            }            
+
+            triangles.Add(vertices.Count - 2);
+            triangles.Add(vertices.Count - 4);
+            triangles.Add(vertices.Count - 3);
+
+            triangles.Add(vertices.Count - 2);
+            triangles.Add(vertices.Count - 3);
+            triangles.Add(vertices.Count - 1);
         }
 
-        return new MeshInfo(vertices.ToArray(), triangles.ToArray(), vertices.ToArray());
+        Vector2[] uvs = new Vector2[vertices.Count];
+
+        float x = 0;
+        for (int i = 0; i < uvs.Length; i += 2)
+        {
+            uvs[i] = new Vector2(x, 0);
+            uvs[i + 1] = new Vector2(x, height);
+
+            x += Vector3.Distance(vertices[i], vertices[(i + 2) % vertices.Count]);
+        }
+
+        return new MeshInfo(vertices.ToArray(), triangles.ToArray(), uvs);
     }
 
     public static PolygonLoops GetPolygonLoopsInMeters(BAMCIS.GeoJSON.Polygon polygon, Vector2 originInMeters)
@@ -168,10 +167,18 @@ public static class BuildingPropertiesHelper
 
         public Vector2[][] InnerLoops { get; private set; }
 
+        public Vector2[][] AllLoops { get; private set; }
+
         public PolygonLoops(Vector2[] outerLoop, Vector2[][] innerLoops)
         {
             OuterLoop = outerLoop;
             InnerLoops = innerLoops;
+            AllLoops = new Vector2[1 + InnerLoops.Length][];
+            AllLoops[0] = OuterLoop;
+            for (int i = 0; i < InnerLoops.Length; i++)
+            {
+                AllLoops[i + 1] = InnerLoops[i];
+            }
         }
     }
 
