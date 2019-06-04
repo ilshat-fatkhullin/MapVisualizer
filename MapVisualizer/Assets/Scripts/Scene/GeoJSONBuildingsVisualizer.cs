@@ -1,39 +1,44 @@
 ﻿using BAMCIS.GeoJSON;
 using Newtonsoft.Json;
-using System;
 using System.Collections.Generic;
 using UnityEngine;
 using static BuildingPropertiesHelper;
 
 public class GeoJSONBuildingsVisualizer : Visualizer
-{    
-    public GameObject BuildingPrefab;
-
+{
     public Material[] WallMaterials;
 
     public Material RoofMaterial;
 
-    private FeatureCollection tile;
+    private FeatureCollection tileGeoJSON;
 
-    private Vector2 originInMeters;
+    private Tile currentTile;
 
-    private void Start()
+    protected override void Start()
     {
-        originInMeters = GeoPositioningHelper.GetMetersFromLatitudeAndLongitude(OriginLatitude, OriginLongitude);
-        LoadGeoJSON();
+        base.Start();
+        currentTile = new Tile(0, 0, 0);
     }
 
-    private string BuildRequest(int x, int y, int z)
+    private void VisualizeTile()
     {
-        return string.Format(StringConstants.GeoJSONTileRequestPattern,
-            Convert.ToString(x), Convert.ToString(y), Convert.ToString(z));
-    }
-
-    private void LoadGeoJSON()
-    {
-        Point2D tile = GeoPositioningHelper.GetTileFromLatitudeAndLongitude(OriginLatitude, OriginLongitude, Zoom);
-        string request = BuildRequest(Zoom, tile.X, tile.Y);
+        string request = currentTile.BuildRequest();
+        Debug.Log(request);
         StartCoroutine(LoadFile(request));
+    }
+
+    private void Update()
+    {
+        Vector2 cameraPositionInMeters = new Vector2(Camera.main.transform.position.x, Camera.main.transform.position.z);
+        cameraPositionInMeters += originInMeters;
+        Tile tile = GeoPositioningHelper.GetTileFromCoordinate(
+            GeoPositioningHelper.GetCoordinateFromMeters(cameraPositionInMeters),
+            Zoom);
+        if (currentTile.X != tile.X || currentTile.Y != tile.Y)
+        {
+            currentTile = tile;
+            VisualizeTile();
+        }
     }
 
     protected override void OnNetworkResponse(string response)
@@ -43,9 +48,9 @@ public class GeoJSONBuildingsVisualizer : Visualizer
             Debug.LogError("Invalid response received");
         }
 
-        tile = JsonConvert.DeserializeObject<FeatureCollection>(response);
+        tileGeoJSON = JsonConvert.DeserializeObject<FeatureCollection>(response);
 
-        foreach (var feature in tile.Features)
+        foreach (var feature in tileGeoJSON.Features)
         {
             InstantiateGeometry(feature.Geometry, feature.Properties);
         }
@@ -55,23 +60,8 @@ public class GeoJSONBuildingsVisualizer : Visualizer
     {
         switch (geometry.Type)
         {
-            case GeoJsonType.Point:
-                InstantiatePoint(geometry as Point);
-                break;
-            case GeoJsonType.MultiPoint:
-                InstantiateMultiPoint(geometry as MultiPoint);
-                break;
-            case GeoJsonType.LineString:
-                InstantiateLineString(geometry as LineString);
-                break;
-            case GeoJsonType.MultiLineString:
-                InstantiateMultiLineString(geometry as MultiLineString);
-                break;
             case GeoJsonType.Polygon:
                 InstantiatePolygon(geometry as Polygon, properties);
-                break;
-            case GeoJsonType.MultiPolygon:
-                InstantiateMultiPolygon(geometry as MultiPolygon);
                 break;
             case GeoJsonType.GeometryCollection:
                 InstantiateGeometryCollection(geometry as GeometryCollection, properties);
@@ -82,40 +72,15 @@ public class GeoJSONBuildingsVisualizer : Visualizer
         }
     }
 
-    private void InstantiatePoint(Point point)
-    {
-
-    }
-
-    private void InstantiateMultiPoint(MultiPoint multiPoint)
-    {
-
-    }
-
-    private void InstantiateLineString(LineString lineString)
-    {
-
-    }
-
-    private void InstantiateMultiLineString(MultiLineString multiLineString)
-    {
-
-    }
-
     private void InstantiatePolygon(Polygon polygon, IDictionary<string, dynamic> properties)
     {
-        PolygonLoops polygonLoops = BuildingPropertiesHelper.GetPolygonLoopsInMeters(polygon, originInMeters);
+        PolygonLoops polygonLoops = GetPolygonLoopsInMeters(polygon, originInMeters);
 
-        MeshInfo roofInfo = BuildingPropertiesHelper.GetRoofInfo(polygonLoops, properties);
-        MeshInfo wallInfo = BuildingPropertiesHelper.GetWallInfo(polygonLoops, properties);
+        MeshInfo roofInfo = GetRoofInfo(polygonLoops, properties);
+        MeshInfo wallInfo = GetWallInfo(polygonLoops, properties);
 
         InstantiateObject(roofInfo, RoofMaterial);
         InstantiateObject(wallInfo, WallMaterials[UnityEngine.Random.Range(0, WallMaterials.Length)]);
-    }
-
-    private void InstantiateMultiPolygon(MultiPolygon multiPolygon)
-    {
-
     }
 
     private void InstantiateGeometryCollection(GeometryCollection geometryCollection, IDictionary<string, dynamic> properties)
@@ -124,22 +89,5 @@ public class GeoJSONBuildingsVisualizer : Visualizer
         {
             InstantiateGeometry(g, properties);
         }
-    }
-
-    private void InstantiateObject(MeshInfo info, Material material)
-    {
-        GameObject building = Instantiate(BuildingPrefab);
-        MeshFilter filter = building.GetComponent<MeshFilter>();
-        Mesh mesh = new Mesh();
-        mesh.vertices = info.Vertices;
-        mesh.triangles = info.Triangles;
-        mesh.SetUVs(0, new List<Vector2>(info.UVs));
-        mesh.RecalculateTangents();
-        mesh.RecalculateNormals();
-        mesh.RecalculateBounds();
-        mesh.Optimize();
-        filter.mesh = mesh;
-        MeshRenderer renderer = building.GetComponent<MeshRenderer>();
-        renderer.material = material;
     }
 }

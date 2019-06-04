@@ -6,7 +6,7 @@ public static class BuildingPropertiesHelper
 {
     public static MeshInfo GetRoofInfo(PolygonLoops polygonLoops, IDictionary<string, dynamic> properties)
     {
-        float height = BuildingPropertiesHelper.GetHeightFromProperties(properties);
+        float height = GetHeightFromProperties(properties);
 
         Vector2[] outerLoop = polygonLoops.OuterLoop;
         Vector2[][] holeLoops = polygonLoops.InnerLoops;        
@@ -112,8 +112,11 @@ public static class BuildingPropertiesHelper
 
             foreach (var position in linearRing.Coordinates)
             {
-                Vector2 positionInMeters = GeoPositioningHelper.GetMetersFromLatitudeAndLongitude(
-                    position.Latitude, position.Longitude) - originInMeters;
+                Vector2 positionInMeters = GeoPositioningHelper.GetMetersFromCoordinate(
+                    new Coordinate(
+                    (float)position.Latitude,
+                    (float)position.Longitude
+                    )) - originInMeters;
                 loop.Add(positionInMeters);
             }
 
@@ -179,26 +182,6 @@ public static class BuildingPropertiesHelper
             {
                 AllLoops[i + 1] = InnerLoops[i];
             }
-        }
-    }
-
-    private class Vector2EqualityComparer : IEqualityComparer<Vector2>
-    {
-        public bool Equals(Vector2 v1, Vector2 v2)
-        {
-            if (v2 == null && v1 == null)
-                return true;
-            else if (v1 == null || v2 == null)
-                return false;
-            else if (v1.x == v2.x && v1.y == v2.y)
-                return true;
-            else
-                return false;
-        }
-
-        public int GetHashCode(Vector2 v)
-        {
-            return (int)v.magnitude;
         }
     }
 }

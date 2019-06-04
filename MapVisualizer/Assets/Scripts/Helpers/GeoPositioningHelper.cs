@@ -3,47 +3,57 @@ using UnityEngine;
 
 public static class GeoPositioningHelper
 {
-    public static Vector2 GetLongitudeAndLatitudeFromTile(float xTile, float yTile, int zoom)
+    public static Coordinate GetCoordinateFromTile(Tile tile)
     {
-        double n = Math.PI - ((2.0 * Math.PI * yTile) / Math.Pow(2.0, zoom));
-        return new Vector2(
-            (float)((xTile / Math.Pow(2.0, zoom) * 360.0) - 180.0),
+        double n = Math.PI - ((2.0 * Math.PI * tile.Y) / Math.Pow(2.0, tile.Zoom));
+        return new Coordinate(
+            (float)((tile.X / Math.Pow(2.0, tile.Zoom) * 360.0) - 180.0),
             (float)(180.0 / Math.PI * Math.Atan(Math.Sinh(n)))
             );
     }
 
-    public static BBox GetBBoxFromLatitudeAndLongitude(float latitudeDegrees, float longitudeDegrees, int zoom)
+    public static BBox GetBBoxFromCoordinate(Coordinate coordinate, int zoom)
     {
-        Point2D tile = GetTileFromLatitudeAndLongitude(latitudeDegrees, longitudeDegrees, zoom);
+        Tile tile = GetTileFromCoordinate(coordinate, zoom);
 
-        float width = 425;
+        float width = 325;
 
-        float xMin = (tile.X * NumericConstants.TILE_SIZE - width / 2) / NumericConstants.TILE_SIZE;
-        float yMin = (tile.Y * NumericConstants.TILE_SIZE - width / 2) / NumericConstants.TILE_SIZE;
-        float xMax = (tile.X * NumericConstants.TILE_SIZE + width / 2) / NumericConstants.TILE_SIZE;
-        float yMax = (tile.Y * NumericConstants.TILE_SIZE + width / 2) / NumericConstants.TILE_SIZE;
+        int xA = Convert.ToInt32((tile.X * NumericConstants.TILE_SIZE - width / 2) / NumericConstants.TILE_SIZE);
+        int yA = Convert.ToInt32((tile.Y * NumericConstants.TILE_SIZE - width / 2) / NumericConstants.TILE_SIZE);
+        int xB = Convert.ToInt32((tile.X * NumericConstants.TILE_SIZE + width / 2) / NumericConstants.TILE_SIZE);
+        int yB = Convert.ToInt32((tile.Y * NumericConstants.TILE_SIZE + width / 2) / NumericConstants.TILE_SIZE);
 
-        Vector2 min = GetLongitudeAndLatitudeFromTile(xMin, yMin, zoom);
-        Vector2 max = GetLongitudeAndLatitudeFromTile(xMax, yMax, zoom);
+        Coordinate a = GetCoordinateFromTile(new Tile(xA, yA, zoom));
+        Coordinate b = GetCoordinateFromTile(new Tile(xB, yB, zoom));
 
-        return new BBox(min.x, min.y, max.x, max.y);
+        return new BBox(Mathf.Min(a.Latitude, b.Latitude),
+                        Mathf.Min(a.Longitude, b.Longitude),
+                        Mathf.Max(a.Latitude, b.Latitude),
+                        Mathf.Max(a.Longitude, b.Longitude));
     }
 
-    public static Point2D GetTileFromLatitudeAndLongitude(float latitudeDegrees, float longitudeDegrees, int zoom)
+    public static Tile GetTileFromCoordinate(Coordinate coordinate, int zoom)
     {
-        float latitudeRadians = latitudeDegrees * Mathf.Deg2Rad;
+        float latitudeRadians = coordinate.Latitude * Mathf.Deg2Rad;
         float n = Mathf.Pow(2f, zoom);
-        int xTile = Convert.ToInt32((longitudeDegrees + 180) / 360 * n);
+        int xTile = Convert.ToInt32((coordinate.Longitude + 180) / 360 * n);
         int yTile = Convert.ToInt32((1f - Mathf.Log(Mathf.Tan(latitudeRadians) + (1 / Mathf.Cos(latitudeRadians))) / Mathf.PI) / 2f * n);
-        return new Point2D(xTile, yTile);
+        return new Tile(xTile, yTile, zoom);
     }
 
-    public static Vector2 GetMetersFromLatitudeAndLongitude(double latitudeDegrees, double longitudeDegrees)
+    public static Vector2 GetMetersFromCoordinate(Coordinate coordinate)
     {
-        double latitude = latitudeDegrees * Mathf.Deg2Rad;
-        double longitude = longitudeDegrees * Mathf.Deg2Rad;
-        double x = NumericConstants.EARTH_RADIUS * (Mathf.PI + longitude);
-        double y = NumericConstants.EARTH_RADIUS * (Math.Log(Math.Tan(Math.PI / 4 + latitude / 2)) - Mathf.PI);
-        return new Vector2((float)x, (float)y);
+        float latitude = coordinate.Latitude * Mathf.Deg2Rad;
+        float longitude = coordinate.Longitude * Mathf.Deg2Rad;
+        float x = NumericConstants.EARTH_RADIUS * longitude;
+        float y = NumericConstants.EARTH_RADIUS * Mathf.Log(Mathf.Tan(Mathf.PI / 4 + latitude / 2));
+        return new Vector2(x, y);
+    }
+
+    public static Coordinate GetCoordinateFromMeters(Vector2 meters)
+    {
+        float longitude = meters.x / NumericConstants.EARTH_RADIUS;
+        float latitude = (Mathf.Atan(Mathf.Exp(meters.y / NumericConstants.EARTH_RADIUS)) - Mathf.PI / 4) * 2;
+        return new Coordinate(latitude * Mathf.Rad2Deg, longitude * Mathf.Rad2Deg);
     }
 }

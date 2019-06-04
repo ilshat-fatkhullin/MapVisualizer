@@ -322,11 +322,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ef7d1ccb8d0e93445adc386818d6c51a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  BuildingPrefab: {fileID: 3076484014762704044, guid: 41e4a0a54025e9043893952b8f7f1c59,
+    type: 3}
   OriginLatitude: 55.78733
   OriginLongitude: 49.12176
   Zoom: 15
-  BuildingPrefab: {fileID: 3076484014762704044, guid: 41e4a0a54025e9043893952b8f7f1c59,
-    type: 3}
   WallMaterials:
   - {fileID: 2100000, guid: 0a582a9f621d95046a188fa43e0c0110, type: 2}
   - {fileID: 2100000, guid: 0a98b165b7ad0054c92ea6cf03b29610, type: 2}
@@ -357,9 +357,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 83d45be99a2463c47a343fd6151c47d6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  BuildingPrefab: {fileID: 3076484014762704044, guid: 41e4a0a54025e9043893952b8f7f1c59,
+    type: 3}
   OriginLatitude: 55.78733
   OriginLongitude: 49.12176
   Zoom: 15
+  AsphaultMaterial: {fileID: 2100000, guid: b9674d5e33800e641a9efae44ddfa6ac, type: 2}
 --- !u!1 &534669902
 GameObject:
   m_ObjectHideFlags: 0
