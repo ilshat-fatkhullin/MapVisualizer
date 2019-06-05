@@ -12,11 +12,17 @@ public static class GeoPositioningHelper
             );
     }
 
+    public static BBox GetBBoxFromTile(Tile tile)
+    {
+        Coordinate coordinate = GetCoordinateFromTile(tile);
+        return GetBBoxFromCoordinate(coordinate, tile.Zoom);
+    }
+
     public static BBox GetBBoxFromCoordinate(Coordinate coordinate, int zoom)
     {
         Tile tile = GetTileFromCoordinate(coordinate, zoom);
 
-        float width = 325;
+        float width = 256;
 
         int xA = Convert.ToInt32((tile.X * NumericConstants.TILE_SIZE - width / 2) / NumericConstants.TILE_SIZE);
         int yA = Convert.ToInt32((tile.Y * NumericConstants.TILE_SIZE - width / 2) / NumericConstants.TILE_SIZE);

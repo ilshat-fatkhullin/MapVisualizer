@@ -69,8 +69,7 @@ namespace Sebastian.Geometry
 
                 if (!hasRemovedEarThisIteration)
                 {
-                    Debug.LogError("Error triangulating mesh. Aborted.");
-                    return null;
+                    throw new System.Exception("Error triangulating mesh.");
                 }
             }
             return tris;

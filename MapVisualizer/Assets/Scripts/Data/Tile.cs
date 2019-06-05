@@ -15,9 +15,25 @@ public class Tile
         Zoom = zoom;
     }
 
-    public string BuildRequest()
+    public static bool operator ==(Tile a, Tile b)
     {
-        return string.Format(StringConstants.GeoJSONTileRequestPattern,
-            Convert.ToString(Zoom), Convert.ToString(X), Convert.ToString(Y));
+        if (a is null && b is null)
+            return true;
+        if (a is null || b is null)
+            return false;
+        if (a.X == b.X && a.Y == b.Y && a.Zoom == b.Zoom)
+            return true;
+        return false;
+    }
+
+    public static bool operator !=(Tile a, Tile b)
+    {
+        if (a is null && b is null)
+            return false;
+        if (a is null || b is null)
+            return true;
+        if (a.X == b.X && a.Y == b.Y && a.Zoom == b.Zoom)
+            return false;
+        return true;
     }
 }

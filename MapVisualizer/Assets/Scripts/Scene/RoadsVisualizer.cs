@@ -12,30 +12,19 @@ public class RoadsVisualizer : Visualizer
 
     private CultureInfo info = new CultureInfo("en-US");
 
-    protected override void Start()
+    protected override string BuildRequest(Tile tile)
     {
-        base.Start();
-        BBox bBox = GeoPositioningHelper.GetBBoxFromCoordinate(
-            new Coordinate(
-            OriginLatitude,
-            OriginLongitude
-            ), Zoom);
-        string request = BuildRequest(bBox);
-        StartCoroutine(LoadFile(request));
-    }
-
-    private string BuildRequest(BBox bBox)
-    {
+        BBox bBox = GeoPositioningHelper.GetBBoxFromTile(tile);
         return string.Format(StringConstants.OSMTileRequestPattern,
             Convert.ToString(bBox.MinLongitude, info), Convert.ToString(bBox.MinLatitude, info),
             Convert.ToString(bBox.MaxLongitude, info), Convert.ToString(bBox.MaxLatitude, info));
     }
 
-    protected override void OnNetworkResponse(string response)
+    protected override void OnNetworkResponse(Tile tile, string response)
     {
         if (string.IsNullOrEmpty(response))
         {
-            Debug.LogError("Invalid response received");
+            return;
         }
 
         nodes = new Dictionary<string, Vector2>();
@@ -79,12 +68,12 @@ public class RoadsVisualizer : Visualizer
                 }
 
                 Road road = new Road(lanes, points.ToArray());
-                InstantiateRoad(road);
+                InstantiateRoad(road, tile);
             }
         }
     }
 
-    private void InstantiateRoad(Road road)
+    private void InstantiateRoad(Road road, Tile tile)
     {
         Vector2[] splinePoints = SplineBuilder.GetSplinePoints(road.Points, NumericConstants.ROAD_SPLINE_STEP);
 
@@ -134,6 +123,6 @@ public class RoadsVisualizer : Visualizer
         }
 
         MeshInfo meshInfo = new MeshInfo(vertices, triangles.ToArray(), uv);
-        InstantiateObject(meshInfo, AsphaultMaterial);
+        InstantiateObject(meshInfo, AsphaultMaterial, tile);
     }
 }

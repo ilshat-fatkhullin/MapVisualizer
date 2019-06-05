@@ -150,7 +150,6 @@ public static class BuildingPropertiesHelper
             return GetHeightFromLevel((int)properties["levels"]);
         }
 
-        Debug.Log("Building does not have any property to calculate its height.");
         return NumericConstants.FIRST_LEVEL_HEIGHT;
     }
 
