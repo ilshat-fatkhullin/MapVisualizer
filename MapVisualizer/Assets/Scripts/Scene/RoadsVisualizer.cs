@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Xml;
 using UnityEngine;
 
@@ -25,6 +26,11 @@ public class RoadsVisualizer : Visualizer
         if (string.IsNullOrEmpty(response))
         {
             return;
+        }
+
+        using (StreamWriter writer = new StreamWriter("tile.osm"))
+        {
+            writer.Write(response);
         }
 
         nodes = new Dictionary<string, Vector2>();

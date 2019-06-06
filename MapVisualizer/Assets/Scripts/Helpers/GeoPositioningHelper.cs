@@ -7,15 +7,16 @@ public static class GeoPositioningHelper
     {
         double n = Math.PI - ((2.0 * Math.PI * tile.Y) / Math.Pow(2.0, tile.Zoom));
         return new Coordinate(
-            (float)((tile.X / Math.Pow(2.0, tile.Zoom) * 360.0) - 180.0),
-            (float)(180.0 / Math.PI * Math.Atan(Math.Sinh(n)))
+            (float)(180.0 / Math.PI * Math.Atan(Math.Sinh(n))),
+            (float)((tile.X / Math.Pow(2.0, tile.Zoom) * 360.0) - 180.0)
             );
     }
 
     public static BBox GetBBoxFromTile(Tile tile)
-    {
-        Coordinate coordinate = GetCoordinateFromTile(tile);
-        return GetBBoxFromCoordinate(coordinate, tile.Zoom);
+    {        
+        Coordinate buttomLeft = GetCoordinateFromTile(new Tile(tile.X - 1, tile.Y - 1, tile.Zoom));
+        Coordinate topRight = GetCoordinateFromTile(new Tile(tile.X + 1, tile.Y + 1, tile.Zoom));
+        return new BBox(buttomLeft.Longitude, topRight.Latitude, topRight.Longitude, buttomLeft.Latitude);
     }
 
     public static BBox GetBBoxFromCoordinate(Coordinate coordinate, int zoom)
