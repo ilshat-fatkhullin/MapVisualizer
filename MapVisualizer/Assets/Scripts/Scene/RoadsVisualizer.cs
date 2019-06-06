@@ -129,6 +129,9 @@ public class RoadsVisualizer : Visualizer
         }
 
         MeshInfo meshInfo = new MeshInfo(vertices, triangles.ToArray(), uv);
-        InstantiateObject(meshInfo, AsphaultMaterial, tile);
+        map.AddObjectToInstantitate(new ObjectToInstantiate(
+            meshInfo,
+            AsphaultMaterial,
+            tile));
     }
 }

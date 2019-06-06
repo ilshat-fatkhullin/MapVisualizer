@@ -4,7 +4,9 @@ using UnityEngine;
 
 public class VisualizedTileMap
 {
-    public List<GameObject> ObjectsToDestroy;
+    public Queue<GameObject> ObjectsToDestroy;
+
+    public Queue<ObjectToInstantiate> ObjectsToInstantiate;
 
     public List<Tile> TilesToVisualize;
 
@@ -12,7 +14,8 @@ public class VisualizedTileMap
 
     public VisualizedTileMap(Tile centerTile)
     {
-        ObjectsToDestroy = new List<GameObject>();
+        ObjectsToDestroy = new Queue<GameObject>();
+        ObjectsToInstantiate = new Queue<ObjectToInstantiate>();
         TilesToVisualize = new List<Tile>();
         map = GetMap(centerTile);
     }
@@ -42,8 +45,7 @@ public class VisualizedTileMap
                 for (int x2 = 0; x2 < newMap.GetLength(0); x2++)
                     for (int y2 = 0; y2 < newMap.GetLength(1); y2++)
                     {
-                        if (newMap[x2, y2].Tile.X == map[x1, y1].Tile.X &&
-                            newMap[x2, y2].Tile.Y == map[x1, y1].Tile.Y)
+                        if (newMap[x2, y2].Tile == map[x1, y1].Tile)
                         {                            
                             doesNotExist = false;
                             break;
@@ -53,8 +55,8 @@ public class VisualizedTileMap
                 if (doesNotExist)
                 {
                     if (map[x1, y1].InstantiatedObjects.Count > 0)
-                    {
-                        ObjectsToDestroy = new List<GameObject>(ObjectsToDestroy.Concat(map[x1, y1].InstantiatedObjects));
+                    {                        
+                        ObjectsToDestroy = new Queue<GameObject>(ObjectsToDestroy.Concat(map[x1, y1].InstantiatedObjects));
                     }
                 }
             }
@@ -69,8 +71,7 @@ public class VisualizedTileMap
                 for (int x2 = 0; x2 < map.GetLength(0); x2++)
                     for (int y2 = 0; y2 < map.GetLength(1); y2++)
                     {
-                        if (map[x2, y2].Tile.X == newMap[x1, y1].Tile.X &&
-                            map[x2, y2].Tile.Y == newMap[x1, y1].Tile.Y)
+                        if (map[x2, y2].Tile == newMap[x1, y1].Tile)
                         {
                             doesNotExist = false;
                             newMap[x1, y1] = map[x2, y2];
@@ -87,15 +88,35 @@ public class VisualizedTileMap
         map = newMap;
     }
 
+    public bool ContainsTile(Tile tile)
+    {
+        for (int i = 0; i < map.GetLength(0); i++)
+            for (int j = 0; j < map.GetLength(0); j++)
+            {
+                if (map[i, j].Tile == tile)
+                {
+                    return true;
+                }
+            }
+        return false;
+    }
+
     public void AddInstantiatedObjectToTile(Tile tile, GameObject gameObject)
     {
-        foreach (var cell in map)
-        {
-            if (cell.Tile == tile)
+        for (int i = 0; i < map.GetLength(0); i++)
+            for (int j = 0; j < map.GetLength(0); j++)
             {
-                cell.InstantiatedObjects.Add(gameObject);
-                break;
+                if (map[i, j].Tile == tile)
+                {
+                    map[i, j].InstantiatedObjects.Enqueue(gameObject);
+                    return;
+                }
             }
-        }
+        throw new System.Exception("Tile is out of map.");
+    }
+
+    public void AddObjectToInstantitate(ObjectToInstantiate objectToInstantiate)
+    {
+        ObjectsToInstantiate.Enqueue(objectToInstantiate);
     }
 }

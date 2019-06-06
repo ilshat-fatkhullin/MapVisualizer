@@ -5,11 +5,11 @@ public class VisualizedTile
 {
     public Tile Tile;
 
-    public List<GameObject> InstantiatedObjects;    
+    public Queue<GameObject> InstantiatedObjects;    
 
     public VisualizedTile(Tile tile)
     {
         Tile = tile;
-        InstantiatedObjects = new List<GameObject>();
+        InstantiatedObjects = new Queue<GameObject>();
     }
 }

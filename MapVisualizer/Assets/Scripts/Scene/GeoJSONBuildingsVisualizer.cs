@@ -64,8 +64,14 @@ public class GeoJSONBuildingsVisualizer : Visualizer
             return;
         }
 
-        InstantiateObject(roofInfo, RoofMaterial, tile);
-        InstantiateObject(wallInfo, WallMaterials[UnityEngine.Random.Range(0, WallMaterials.Length)], tile);
+        map.AddObjectToInstantitate(new ObjectToInstantiate(
+            roofInfo,
+            RoofMaterial,
+            tile));
+        map.AddObjectToInstantitate(new ObjectToInstantiate(
+            wallInfo,
+            WallMaterials[UnityEngine.Random.Range(0, WallMaterials.Length)],
+            tile));
     }
 
     private void InstantiateGeometryCollection(GeometryCollection geometryCollection, IDictionary<string, dynamic> properties, Tile tile)

@@ -326,7 +326,9 @@ MonoBehaviour:
     type: 3}
   OriginLatitude: 55.78733
   OriginLongitude: 49.12176
-  Zoom: 15
+  DelayBetweenBatches: 0.05
+  NumberOfObjectsInBatch: 5
+  Zoom: 16
   WallMaterials:
   - {fileID: 2100000, guid: 0a582a9f621d95046a188fa43e0c0110, type: 2}
   - {fileID: 2100000, guid: 0a98b165b7ad0054c92ea6cf03b29610, type: 2}
@@ -352,7 +354,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 322427324}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 83d45be99a2463c47a343fd6151c47d6, type: 3}
   m_Name: 
@@ -361,7 +363,9 @@ MonoBehaviour:
     type: 3}
   OriginLatitude: 55.78733
   OriginLongitude: 49.12176
-  Zoom: 15
+  DelayBetweenBatches: 0.05
+  NumberOfObjectsInBatch: 5
+  Zoom: 16
   AsphaultMaterial: {fileID: 2100000, guid: b9674d5e33800e641a9efae44ddfa6ac, type: 2}
 --- !u!1 &534669902
 GameObject:
