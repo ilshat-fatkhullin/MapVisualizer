@@ -28,11 +28,6 @@ public class RoadsVisualizer : Visualizer
             return;
         }
 
-        using (StreamWriter writer = new StreamWriter("tile.osm"))
-        {
-            writer.Write(response);
-        }
-
         nodes = new Dictionary<string, Vector2>();
 
         XmlDocument document = new XmlDocument();

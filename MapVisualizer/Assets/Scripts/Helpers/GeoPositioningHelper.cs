@@ -3,40 +3,16 @@ using UnityEngine;
 
 public static class GeoPositioningHelper
 {
-    public static Coordinate GetCoordinateFromTile(Tile tile)
+    /// <summary>
+    /// Returns NW corner coordinate of the tile.
+    /// </summary>
+    public static Coordinate GetNWCoordinateFromTile(Tile tile)
     {
         double n = Math.PI - ((2.0 * Math.PI * tile.Y) / Math.Pow(2.0, tile.Zoom));
         return new Coordinate(
             (float)(180.0 / Math.PI * Math.Atan(Math.Sinh(n))),
             (float)((tile.X / Math.Pow(2.0, tile.Zoom) * 360.0) - 180.0)
             );
-    }
-
-    public static BBox GetBBoxFromTile(Tile tile)
-    {        
-        Coordinate buttomLeft = GetCoordinateFromTile(new Tile(tile.X - 1, tile.Y - 1, tile.Zoom));
-        Coordinate topRight = GetCoordinateFromTile(new Tile(tile.X + 1, tile.Y + 1, tile.Zoom));
-        return new BBox(buttomLeft.Longitude, topRight.Latitude, topRight.Longitude, buttomLeft.Latitude);
-    }
-
-    public static BBox GetBBoxFromCoordinate(Coordinate coordinate, int zoom)
-    {
-        Tile tile = GetTileFromCoordinate(coordinate, zoom);
-
-        float width = 256;
-
-        int xA = Convert.ToInt32((tile.X * NumericConstants.TILE_SIZE - width / 2) / NumericConstants.TILE_SIZE);
-        int yA = Convert.ToInt32((tile.Y * NumericConstants.TILE_SIZE - width / 2) / NumericConstants.TILE_SIZE);
-        int xB = Convert.ToInt32((tile.X * NumericConstants.TILE_SIZE + width / 2) / NumericConstants.TILE_SIZE);
-        int yB = Convert.ToInt32((tile.Y * NumericConstants.TILE_SIZE + width / 2) / NumericConstants.TILE_SIZE);
-
-        Coordinate a = GetCoordinateFromTile(new Tile(xA, yA, zoom));
-        Coordinate b = GetCoordinateFromTile(new Tile(xB, yB, zoom));
-
-        return new BBox(Mathf.Min(a.Latitude, b.Latitude),
-                        Mathf.Min(a.Longitude, b.Longitude),
-                        Mathf.Max(a.Latitude, b.Latitude),
-                        Mathf.Max(a.Longitude, b.Longitude));
     }
 
     public static Tile GetTileFromCoordinate(Coordinate coordinate, int zoom)
@@ -46,6 +22,17 @@ public static class GeoPositioningHelper
         int xTile = Convert.ToInt32((coordinate.Longitude + 180) / 360 * n);
         int yTile = Convert.ToInt32((1f - Mathf.Log(Mathf.Tan(latitudeRadians) + (1 / Mathf.Cos(latitudeRadians))) / Mathf.PI) / 2f * n);
         return new Tile(xTile, yTile, zoom);
+    }
+
+    public static BBox GetBBoxFromTile(Tile tile)
+    {        
+        Coordinate p1 = GetNWCoordinateFromTile(tile);
+        Coordinate p2 = GetNWCoordinateFromTile(new Tile(tile.X + 1, tile.Y + 1, tile.Zoom));
+        return new BBox(
+            Mathf.Min(p2.Longitude, p1.Longitude),
+            Mathf.Min(p2.Latitude, p1.Latitude),
+            Mathf.Max(p2.Longitude, p1.Longitude),
+            Mathf.Max(p2.Latitude, p1.Latitude));
     }
 
     public static Vector2 GetMetersFromCoordinate(Coordinate coordinate)
