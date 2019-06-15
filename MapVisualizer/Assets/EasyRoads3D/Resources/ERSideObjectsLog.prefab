@@ -3604,8 +3604,8 @@ MonoBehaviour:
     connectionRadius: 0
   - roadTypeName: Primary
     id: 1560585970.2810092
-    timestamp: 1560589093.5132065
-    roadWidth: 30
+    timestamp: 1560626080.114572
+    roadWidth: 20
     faceDistance: 2
     angleTreshold: 45
     uvTiling: 1
@@ -3643,8 +3643,8 @@ MonoBehaviour:
     maxSpeed: 55
     speedLimit: 50
     roadShape:
-    - {x: -15, y: 0}
-    - {x: 15, y: 0}
+    - {x: -10, y: 0}
+    - {x: 10, y: 0}
     roadShapeExt: []
     roadShapeExt2: []
     doConnectionTri: 
@@ -3718,8 +3718,8 @@ MonoBehaviour:
     connectionRadius: 0
   - roadTypeName: Secondary
     id: 1560585977.4965026
-    timestamp: 1560587938.8185232
-    roadWidth: 24
+    timestamp: 1560626088.4271874
+    roadWidth: 15
     faceDistance: 2
     angleTreshold: 45
     uvTiling: 1
@@ -3757,8 +3757,8 @@ MonoBehaviour:
     maxSpeed: 55
     speedLimit: 50
     roadShape:
-    - {x: -12, y: 0}
-    - {x: 12, y: 0}
+    - {x: -7.5, y: 0}
+    - {x: 7.5, y: 0}
     roadShapeExt: []
     roadShapeExt2: []
     doConnectionTri: 
@@ -3832,7 +3832,7 @@ MonoBehaviour:
     connectionRadius: 0
   - roadTypeName: Tertiary
     id: 1560585984.767234
-    timestamp: 1560588294.8534503
+    timestamp: 1560626073.913878
     roadWidth: 10
     faceDistance: 2
     angleTreshold: 45
@@ -4174,10 +4174,10 @@ MonoBehaviour:
     connectionRadius: 0
   - roadTypeName: Footway
     id: 1560586027.8411202
-    timestamp: 1560588605.4833462
+    timestamp: 1560606573.0653853
     roadWidth: 6
     faceDistance: 2
-    angleTreshold: 45
+    angleTreshold: 90
     uvTiling: 1
     uv4Type: 0
     type: 0

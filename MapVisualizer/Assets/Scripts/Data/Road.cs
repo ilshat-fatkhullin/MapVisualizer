@@ -1,10 +1,11 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
+using UnityEngine;
 
 public class Road
 {
     public int Lanes { get; private set; }
 
-    public Vector2[] Points { get; private set; }
+    public List<Vector2> Nodes { get; private set; }
 
     public enum RoadType { Default,
                            Motorway, Trunk, Primary, Secondary, Tertiary, Unclassified, Residential,
@@ -15,10 +16,10 @@ public class Road
 
     public string Name { get; private set; }
 
-    public Road(int lanes, Vector2[] points, RoadType type, string name)
+    public Road(int lanes, List<Vector2> nodes, RoadType type, string name)
     {
         Lanes = lanes;
-        Points = points;
+        Nodes = nodes;
         Type = type;
         Name = name;
     }

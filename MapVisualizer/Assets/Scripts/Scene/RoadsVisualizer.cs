@@ -9,7 +9,7 @@ public class RoadsVisualizer : Visualizer<RoadToInstantiate>
 {
     public Material AsphaultMaterial;
 
-    private Dictionary<string, Vector2> nodes;
+    private Dictionary<string, Vector2> allRoadNodes;
 
     private CultureInfo info = new CultureInfo("en-US");
 
@@ -55,7 +55,7 @@ public class RoadsVisualizer : Visualizer<RoadToInstantiate>
             return;
         }
 
-        nodes = new Dictionary<string, Vector2>();
+        allRoadNodes = new Dictionary<string, Vector2>();
 
         XmlDocument document = new XmlDocument();
         document.LoadXml(response);
@@ -72,7 +72,7 @@ public class RoadsVisualizer : Visualizer<RoadToInstantiate>
                     Convert.ToSingle(node.Attributes.GetNamedItem("lon").Value, info)
                     )) - originInMeters;
 
-                nodes.Add(node.Attributes.GetNamedItem("id").Value, coordinates);
+                allRoadNodes.Add(node.Attributes.GetNamedItem("id").Value, coordinates);
             }
         }
 
@@ -80,7 +80,8 @@ public class RoadsVisualizer : Visualizer<RoadToInstantiate>
         {
             if (node.Name == "way")
             {
-                List<Vector2> points = new List<Vector2>();
+                List<Vector2> roadNodes = new List<Vector2>();
+
                 int lanes = 1;
                 Road.RoadType roadType = Road.RoadType.Default;
                 string roadName = "Default";
@@ -89,12 +90,13 @@ public class RoadsVisualizer : Visualizer<RoadToInstantiate>
                 {
                     if (subNode.Name == "nd")
                     {
-                        points.Add(nodes[subNode.Attributes.GetNamedItem("ref").Value]);
+                        roadNodes.Add(allRoadNodes[subNode.Attributes.GetNamedItem("ref").Value]);
                     }
                     else if (subNode.Name == "tag")
                     {
                         string key = subNode.Attributes.GetNamedItem("k").Value;
                         string value = subNode.Attributes.GetNamedItem("v").Value;
+
                         if (key == "lanes")
                         {
                             lanes = Convert.ToInt32(value);
@@ -108,31 +110,33 @@ public class RoadsVisualizer : Visualizer<RoadToInstantiate>
                     }
                 }
 
-                Road road = new Road(lanes, points.ToArray(), roadType, roadName);
+                Road road = new Road(lanes, roadNodes, roadType, roadName);
                 InstantiateRoad(road, tile);
             }
         }
     }
 
     private void InstantiateRoad(Road road, Tile tile)
-    {
-        Vector3[] points = new Vector3[road.Points.Length];
-
-        for (int i = 0; i < points.Length; i++)
-        {
-            points[i] = new Vector3(road.Points[i].x, NumericConstants.ROAD_Y_OFFSET, road.Points[i].y);
-        }
-
+    {        
         if (road.Type == Road.RoadType.Default)
             return;
 
-        map.EnqueueObjectToInstantitate(new RoadToInstantiate(road, points, tile));
+        map.EnqueueObjectToInstantitate(new RoadToInstantiate(road, tile));
     }
 
     protected override GameObject InstantiateObject(RoadToInstantiate objectToInstantiate)
     {
+        Road road = objectToInstantiate.Road;
+        Vector3[] points = new Vector3[road.Nodes.Count];        
+
+        for (int i = 0; i < points.Length; i++)
+        {
+            points[i] = new Vector3(road.Nodes[i].x, NumericConstants.ROAD_Y_OFFSET, road.Nodes[i].y);
+        }
+
         ERRoadType roadType = roadTypes[(int)objectToInstantiate.Road.Type];
-        ERRoad road = roadNetwork.CreateRoad(objectToInstantiate.Road.Name, roadType, objectToInstantiate.Points);
-        return road.gameObject;
+        ERRoad erRoad = roadNetwork.CreateRoad(objectToInstantiate.Road.Name, roadType, points);
+
+        return erRoad.gameObject;
     }
 }
