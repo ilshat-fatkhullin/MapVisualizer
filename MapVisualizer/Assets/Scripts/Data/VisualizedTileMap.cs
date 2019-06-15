@@ -2,11 +2,12 @@
 using System.Linq;
 using UnityEngine;
 
-public class VisualizedTileMap
+/// <typeparam name="O">Data, which stores all info about how to instantiate an object.</typeparam>
+public class VisualizedTileMap<O> where O: ObjectToInstantiate
 {
-    public Queue<GameObject> ObjectsToDestroy;
+    private Queue<GameObject> objectsToDestroy;
 
-    public Queue<ObjectToInstantiate> ObjectsToInstantiate;
+    private Queue<O> objectsToInstantiate;
 
     public List<Tile> TilesToVisualize;
 
@@ -14,8 +15,8 @@ public class VisualizedTileMap
 
     public VisualizedTileMap(Tile centerTile)
     {
-        ObjectsToDestroy = new Queue<GameObject>();
-        ObjectsToInstantiate = new Queue<ObjectToInstantiate>();
+        objectsToDestroy = new Queue<GameObject>();
+        objectsToInstantiate = new Queue<O>();
         TilesToVisualize = new List<Tile>();
         map = GetMap(centerTile);
     }
@@ -56,7 +57,7 @@ public class VisualizedTileMap
                 {
                     if (map[x1, y1].InstantiatedObjects.Count > 0)
                     {                        
-                        ObjectsToDestroy = new Queue<GameObject>(ObjectsToDestroy.Concat(map[x1, y1].InstantiatedObjects));
+                        objectsToDestroy = new Queue<GameObject>(objectsToDestroy.Concat(map[x1, y1].InstantiatedObjects));
                     }
                 }
             }
@@ -90,14 +91,9 @@ public class VisualizedTileMap
 
     public bool ContainsTile(Tile tile)
     {
-        for (int i = 0; i < map.GetLength(0); i++)
-            for (int j = 0; j < map.GetLength(0); j++)
-            {
-                if (map[i, j].Tile == tile)
-                {
-                    return true;
-                }
-            }
+        if (tile.X >= map[0, 0].Tile.X && tile.X <= map[2, 2].Tile.X &&
+            tile.Y >= map[0, 0].Tile.Y && tile.Y <= map[2, 2].Tile.Y)
+            return true;
         return false;
     }
 
@@ -112,11 +108,32 @@ public class VisualizedTileMap
                     return;
                 }
             }
+
         throw new System.Exception("Tile is out of map.");
     }
 
-    public void AddObjectToInstantitate(ObjectToInstantiate objectToInstantiate)
+    public void EnqueueObjectToInstantitate(O objectToInstantiate)
     {
-        ObjectsToInstantiate.Enqueue(objectToInstantiate);
+        objectsToInstantiate.Enqueue(objectToInstantiate);
+    }
+
+    public O DequeueObjectToInstantiate()
+    {
+        return objectsToInstantiate.Dequeue();
+    }
+
+    public bool HasObjectsToInstatiate()
+    {
+        return objectsToInstantiate.Count > 0;
+    }
+
+    public GameObject DequeueObjectToDestroy()
+    {
+        return objectsToDestroy.Dequeue();
+    }
+
+    public bool HasObjectsToDestroy()
+    {
+        return objectsToDestroy.Count > 0;
     }
 }

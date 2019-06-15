@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using static BuildingPropertiesHelper;
 
-public class GeoJSONBuildingsVisualizer : Visualizer
+public class GeoJSONBuildingsVisualizer : Visualizer<BuildingToInstantiate>
 {
     public Material[] WallMaterials;
 
@@ -64,11 +64,11 @@ public class GeoJSONBuildingsVisualizer : Visualizer
             return;
         }
 
-        map.AddObjectToInstantitate(new ObjectToInstantiate(
+        map.EnqueueObjectToInstantitate(new BuildingToInstantiate(
             roofInfo,
             RoofMaterial,
             tile));
-        map.AddObjectToInstantitate(new ObjectToInstantiate(
+        map.EnqueueObjectToInstantitate(new BuildingToInstantiate(
             wallInfo,
             WallMaterials[UnityEngine.Random.Range(0, WallMaterials.Length)],
             tile));
@@ -80,5 +80,23 @@ public class GeoJSONBuildingsVisualizer : Visualizer
         {
             InstantiateGeometry(g, properties, tile);
         }
+    }
+
+    protected override GameObject InstantiateObject(BuildingToInstantiate objectToInstantiate)
+    {
+        GameObject building = Instantiate(BuildingPrefab);
+        MeshFilter filter = building.GetComponent<MeshFilter>();
+        Mesh mesh = new Mesh();
+        mesh.vertices = objectToInstantiate.Info.Vertices;
+        mesh.triangles = objectToInstantiate.Info.Triangles;
+        mesh.SetUVs(0, new List<Vector2>(objectToInstantiate.Info.UVs));
+        mesh.RecalculateTangents();
+        mesh.RecalculateNormals();
+        mesh.RecalculateBounds();
+        mesh.Optimize();
+        filter.mesh = mesh;
+        MeshRenderer renderer = building.GetComponent<MeshRenderer>();
+        renderer.material = objectToInstantiate.Material;
+        return building;
     }
 }

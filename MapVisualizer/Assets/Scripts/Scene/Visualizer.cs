@@ -1,9 +1,9 @@
 ﻿using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Networking;
 
-public abstract class Visualizer : MonoBehaviour
+/// <typeparam name="O">Data, which stores all info about how to instantiate an object.</typeparam>
+public abstract class Visualizer<O> : MonoBehaviour where O : ObjectToInstantiate
 {
     public GameObject BuildingPrefab;
 
@@ -19,7 +19,7 @@ public abstract class Visualizer : MonoBehaviour
 
     protected Vector2 originInMeters;
 
-    protected VisualizedTileMap map;
+    protected VisualizedTileMap<O> map;
 
     protected Tile centerTile;
 
@@ -27,7 +27,7 @@ public abstract class Visualizer : MonoBehaviour
     {
         originInMeters = GeoPositioningHelper.GetMetersFromCoordinate(new Coordinate(OriginLatitude, OriginLongitude));
         centerTile = new Tile(0, 0, 0);
-        map = new VisualizedTileMap(centerTile);
+        map = new VisualizedTileMap<O>(centerTile);
         StartCoroutine(ManageObjects());
     }
 
@@ -86,13 +86,19 @@ public abstract class Visualizer : MonoBehaviour
         {
             for (int i = 0; i < NumberOfObjectsInBatch; i++)
             {
-                if (map.ObjectsToInstantiate.Count > 0)
+                if (map.HasObjectsToInstatiate())
                 {
-                    InstantiateObject(map.ObjectsToInstantiate.Dequeue());
+                    ObjectToInstantiate objectToInstantiate = map.DequeueObjectToInstantiate();
+
+                    if (map.ContainsTile(objectToInstantiate.Tile))
+                    {
+                        GameObject instantiatedObject = InstantiateObject(objectToInstantiate as O);
+                        map.AddInstantiatedObjectToTile(objectToInstantiate.Tile, instantiatedObject);
+                    }
                 }
-                if (map.ObjectsToDestroy.Count > 0)
+                if (map.HasObjectsToDestroy())
                 {
-                    Destroy(map.ObjectsToDestroy.Dequeue());
+                    Destroy(map.DequeueObjectToDestroy());
                 }
             }
 
@@ -100,28 +106,7 @@ public abstract class Visualizer : MonoBehaviour
         }
     }
 
-    private void InstantiateObject(ObjectToInstantiate objectToInstantiate)
-    {
-        if (!map.ContainsTile(objectToInstantiate.Tile))
-        {
-            return;
-        }
-
-        GameObject building = Instantiate(BuildingPrefab);
-        MeshFilter filter = building.GetComponent<MeshFilter>();
-        Mesh mesh = new Mesh();
-        mesh.vertices = objectToInstantiate.Info.Vertices;
-        mesh.triangles = objectToInstantiate.Info.Triangles;
-        mesh.SetUVs(0, new List<Vector2>(objectToInstantiate.Info.UVs));
-        mesh.RecalculateTangents();
-        mesh.RecalculateNormals();
-        mesh.RecalculateBounds();
-        mesh.Optimize();
-        filter.mesh = mesh;
-        MeshRenderer renderer = building.GetComponent<MeshRenderer>();
-        renderer.material = objectToInstantiate.Material;
-        map.AddInstantiatedObjectToTile(objectToInstantiate.Tile, building);
-    }
+    protected abstract GameObject InstantiateObject(O objectToInstantiate);
 
     protected abstract string BuildRequest(Tile tile);
 

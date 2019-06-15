@@ -1,17 +1,39 @@
-﻿using System;
+﻿using EasyRoads3Dv3;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.IO;
 using System.Xml;
 using UnityEngine;
 
-public class RoadsVisualizer : Visualizer
+public class RoadsVisualizer : Visualizer<RoadToInstantiate>
 {
     public Material AsphaultMaterial;
 
     private Dictionary<string, Vector2> nodes;
 
     private CultureInfo info = new CultureInfo("en-US");
+
+    private ERRoadNetwork roadNetwork;
+
+    private ERRoadType[] roadTypes;
+
+    private void Awake()
+    {
+        roadNetwork = new ERRoadNetwork();
+
+        string[] names = Enum.GetNames(typeof(Road.RoadType));
+        roadTypes = new ERRoadType[names.Length];
+        for (int i = 0; i < roadTypes.Length; i++)
+        {
+            roadTypes[i] = roadNetwork.GetRoadTypeByName(names[i]);
+        }
+    }
+
+    protected override void Start()
+    {
+        base.Start();
+    }
+
 
     protected override string BuildRequest(Tile tile)
     {
@@ -23,6 +45,11 @@ public class RoadsVisualizer : Visualizer
 
     protected override void OnNetworkResponse(Tile tile, string response)
     {
+        if (!map.ContainsTile(tile))
+        {
+            return;
+        }
+
         if (string.IsNullOrEmpty(response))
         {
             return;
@@ -55,6 +82,8 @@ public class RoadsVisualizer : Visualizer
             {
                 List<Vector2> points = new List<Vector2>();
                 int lanes = 1;
+                Road.RoadType roadType = Road.RoadType.Default;
+                string roadName = "Default";
 
                 foreach (XmlNode subNode in node.ChildNodes)
                 {
@@ -62,13 +91,24 @@ public class RoadsVisualizer : Visualizer
                     {
                         points.Add(nodes[subNode.Attributes.GetNamedItem("ref").Value]);
                     }
-                    else if (subNode.Name == "tag" && subNode.Attributes.GetNamedItem("k").Value == "lanes")
+                    else if (subNode.Name == "tag")
                     {
-                        lanes = Convert.ToInt32(subNode.Attributes.GetNamedItem("v").Value);
+                        string key = subNode.Attributes.GetNamedItem("k").Value;
+                        string value = subNode.Attributes.GetNamedItem("v").Value;
+                        if (key == "lanes")
+                        {
+                            lanes = Convert.ToInt32(value);
+                        }
+                        else if (key == "highway")
+                        {
+                            value = char.ToUpper(value[0]) + value.Substring(1);
+                            roadType = Road.GetRoadType(value);
+                            roadName = value;
+                        }
                     }
                 }
 
-                Road road = new Road(lanes, points.ToArray());
+                Road road = new Road(lanes, points.ToArray(), roadType, roadName);
                 InstantiateRoad(road, tile);
             }
         }
@@ -76,57 +116,23 @@ public class RoadsVisualizer : Visualizer
 
     private void InstantiateRoad(Road road, Tile tile)
     {
-        Vector2[] splinePoints = SplineBuilder.GetSplinePoints(road.Points, NumericConstants.ROAD_SPLINE_STEP);
+        Vector3[] points = new Vector3[road.Points.Length];
 
-        Vector3[] vertices = new Vector3[splinePoints.Length * 2];
-        List<int> triangles = new List<int>(splinePoints.Length * 3);
-        Vector2[] uv = new Vector2[vertices.Length];
-
-        float width = NumericConstants.ROAD_LANE_WIDTH * road.Lanes;
-
-        Vector2 direction = Vector2.zero;
-        Vector2 right;
-        Vector2 point;
-        Vector2 rightPoint;
-        Vector2 leftPoint;
-
-        for (int i = 0; i < splinePoints.Length; i++)
+        for (int i = 0; i < points.Length; i++)
         {
-            point = splinePoints[i];
-
-            if (i + 1 != splinePoints.Length)
-            {
-                direction = (splinePoints[i + 1] - point).normalized;
-            }
-
-            right = Vector2DHelper.Rotate2D(direction, 90);
-            rightPoint = point + right * (width / 2);
-            leftPoint = point - right * (width / 2);
-
-            vertices[i * 2] = new Vector3(rightPoint.x, NumericConstants.ROAD_Y_OFFSET, rightPoint.y);
-            vertices[i * 2 + 1] = new Vector3(leftPoint.x, NumericConstants.ROAD_Y_OFFSET, leftPoint.y);
+            points[i] = new Vector3(road.Points[i].x, NumericConstants.ROAD_Y_OFFSET, road.Points[i].y);
         }
 
-        for (int i = 0; i < vertices.Length - 2; i += 2)
-        {
-            triangles.Add(i + 3);
-            triangles.Add(i + 1);
-            triangles.Add(i);
+        if (road.Type == Road.RoadType.Default)
+            return;
 
-            triangles.Add(i + 2);
-            triangles.Add(i + 3);
-            triangles.Add(i);                        
-        }
+        map.EnqueueObjectToInstantitate(new RoadToInstantiate(road, points, tile));
+    }
 
-        for (int i = 0; i < vertices.Length; i++)
-        {
-            uv[i] = new Vector2(vertices[i].x, vertices[i].z);
-        }
-
-        MeshInfo meshInfo = new MeshInfo(vertices, triangles.ToArray(), uv);
-        map.AddObjectToInstantitate(new ObjectToInstantiate(
-            meshInfo,
-            AsphaultMaterial,
-            tile));
+    protected override GameObject InstantiateObject(RoadToInstantiate objectToInstantiate)
+    {
+        ERRoadType roadType = roadTypes[(int)objectToInstantiate.Road.Type];
+        ERRoad road = roadNetwork.CreateRoad(objectToInstantiate.Road.Name, roadType, objectToInstantiate.Points);
+        return road.gameObject;
     }
 }
