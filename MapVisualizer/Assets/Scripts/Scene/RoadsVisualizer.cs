@@ -1,32 +1,26 @@
-﻿using EasyRoads3Dv3;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Xml;
 using UnityEngine;
 
-public class RoadsVisualizer : Visualizer<RoadToInstantiate>
+public class RoadsVisualizer : Visualizer
 {
-    public Material AsphaultMaterial;
-
-    private Dictionary<string, Vector2> allRoadNodes;
+    public Terrain Terrain;
 
     private CultureInfo info = new CultureInfo("en-US");
 
-    private ERRoadNetwork roadNetwork;
+    private Dictionary<string, Vector2> allRoadNodes;
 
-    private ERRoadType[] roadTypes;
+    private List<Road> roads;
+
+    private Intmap intmap;
+
+    private Vector2 terrainSize;
 
     private void Awake()
     {
-        roadNetwork = new ERRoadNetwork();
-
-        string[] names = Enum.GetNames(typeof(Road.RoadType));
-        roadTypes = new ERRoadType[names.Length];
-        for (int i = 0; i < roadTypes.Length; i++)
-        {
-            roadTypes[i] = roadNetwork.GetRoadTypeByName(names[i]);
-        }
+        roads = new List<Road>();
     }
 
     protected override void Start()
@@ -45,32 +39,32 @@ public class RoadsVisualizer : Visualizer<RoadToInstantiate>
 
     protected override void OnNetworkResponse(Tile tile, string response)
     {
-        if (!map.ContainsTile(tile))
-        {
-            return;
-        }
+        UpdateTerrainTransform();
+        RetrieveRoads(response);
+        UpdateTerrain();
+    }
 
-        if (string.IsNullOrEmpty(response))
-        {
-            return;
-        }
-
+    private void RetrieveRoads(string response)
+    {
         allRoadNodes = new Dictionary<string, Vector2>();
+        roads = new List<Road>();
 
         XmlDocument document = new XmlDocument();
         document.LoadXml(response);
         XmlElement root = document.DocumentElement;
 
+        Vector2 terrainOrigin = new Vector2(Terrain.transform.position.x, Terrain.transform.position.z);
+
         foreach (XmlNode node in root)
         {
             if (node.Name == "node")
-            {                
+            {
 
                 Vector2 coordinates = GeoPositioningHelper.GetMetersFromCoordinate(
                     new Coordinate(
                     Convert.ToSingle(node.Attributes.GetNamedItem("lat").Value, info),
                     Convert.ToSingle(node.Attributes.GetNamedItem("lon").Value, info)
-                    )) - originInMeters;
+                    )) - originInMeters - terrainOrigin;
 
                 allRoadNodes.Add(node.Attributes.GetNamedItem("id").Value, coordinates);
             }
@@ -84,7 +78,6 @@ public class RoadsVisualizer : Visualizer<RoadToInstantiate>
 
                 int lanes = 1;
                 Road.RoadType roadType = Road.RoadType.Default;
-                string roadName = "Default";
 
                 foreach (XmlNode subNode in node.ChildNodes)
                 {
@@ -105,38 +98,73 @@ public class RoadsVisualizer : Visualizer<RoadToInstantiate>
                         {
                             value = char.ToUpper(value[0]) + value.Substring(1);
                             roadType = Road.GetRoadType(value);
-                            roadName = value;
                         }
                     }
                 }
 
-                Road road = new Road(lanes, roadNodes, roadType, roadName);
-                InstantiateRoad(road, tile);
+                roads.Add(new Road(lanes, roadNodes, roadType));
             }
         }
     }
 
-    private void InstantiateRoad(Road road, Tile tile)
-    {        
-        if (road.Type == Road.RoadType.Default)
-            return;
+    private void UpdateTerrainTransform()
+    {
+        Terrain.Flush();
 
-        map.EnqueueObjectToInstantitate(new RoadToInstantiate(road, tile));
+        Vector2 nw = GeoPositioningHelper.GetMetersFromCoordinate(GeoPositioningHelper.GetNWCoordinateFromTile(currentTile));
+        Vector2 se = GeoPositioningHelper.GetMetersFromCoordinate(GeoPositioningHelper.GetNWCoordinateFromTile(new Tile(currentTile.X + 1, currentTile.Y + 1, currentTile.Zoom)));
+        terrainSize = new Vector2(Math.Abs(nw.x - se.x), Math.Abs(nw.y - se.y));
+
+        Terrain.terrainData.size = new Vector3(terrainSize.x, Terrain.terrainData.size.y, terrainSize.y);
+
+        Terrain.gameObject.transform.position = new Vector3(nw.x - originInMeters.x, 0, se.y - originInMeters.y);
     }
 
-    protected override GameObject InstantiateObject(RoadToInstantiate objectToInstantiate)
-    {
-        Road road = objectToInstantiate.Road;
-        Vector3[] points = new Vector3[road.Nodes.Count];        
+    private void UpdateTerrain()
+    {        
+        intmap = new Intmap(Terrain.terrainData.alphamapWidth, Terrain.terrainData.alphamapHeight);
 
-        for (int i = 0; i < points.Length; i++)
+        foreach (var road in roads)
         {
-            points[i] = new Vector3(road.Nodes[i].x, NumericConstants.ROAD_Y_OFFSET, road.Nodes[i].y);
+            if (road.Nodes.Count < 2)
+                continue;
+
+            for (int i = 1; i < road.Nodes.Count; i++)
+            {
+                Point2D point1 = GetTerrainMapPoint(road.Nodes[i - 1], terrainSize);
+                Point2D point2 = GetTerrainMapPoint(road.Nodes[i], terrainSize);
+                intmap.DrawLine(point1, point2, (int)road.Type,
+                                MetersToTerrainMapCells(road.GetRoadWidth(), terrainSize.x));
+            }
         }
 
-        ERRoadType roadType = roadTypes[(int)objectToInstantiate.Road.Type];
-        ERRoad erRoad = roadNetwork.CreateRoad(objectToInstantiate.Road.Name, roadType, points);
+        float[,,] alphamap = new float[Terrain.terrainData.alphamapWidth, Terrain.terrainData.alphamapHeight, Terrain.terrainData.alphamapLayers];
 
-        return erRoad.gameObject;
+        for (int x = 0; x < alphamap.GetLength(0); x++)
+            for (int y = 0; y < alphamap.GetLength(1); y++)
+                for (int l = 0; l < alphamap.GetLength(2); l++)
+                {
+                    if (intmap.Map[x, y] == l)
+                    {
+                        alphamap[y, x, l] = 1;
+                    }
+                    else
+                    {
+                        alphamap[y, x, l] = 0;
+                    }
+                }
+
+        Terrain.terrainData.SetAlphamaps(0, 0, alphamap);
+    }
+
+    private Point2D GetTerrainMapPoint(Vector2 coordinate, Vector2 terrainSize)
+    {
+        return new Point2D(Mathf.RoundToInt((coordinate.x / terrainSize.x) * Terrain.terrainData.alphamapWidth),
+                           Mathf.RoundToInt((coordinate.y / terrainSize.y) * Terrain.terrainData.alphamapHeight));
+    }
+
+    private int MetersToTerrainMapCells(float meters, float terrainSize)
+    {
+        return Mathf.RoundToInt(meters * Terrain.terrainData.alphamapWidth / terrainSize);
     }
 }

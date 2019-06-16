@@ -5,11 +5,18 @@ using System.Collections.Generic;
 using UnityEngine;
 using static BuildingPropertiesHelper;
 
-public class GeoJSONBuildingsVisualizer : Visualizer<BuildingToInstantiate>
+public class GeoJSONBuildingsVisualizer : Visualizer
 {
     public Material[] WallMaterials;
 
     public Material RoofMaterial;
+
+    private List<GameObject> buildings;
+
+    private void Awake()
+    {
+        buildings = new List<GameObject>();
+    }
 
     protected override string BuildRequest(Tile tile)
     {
@@ -22,6 +29,11 @@ public class GeoJSONBuildingsVisualizer : Visualizer<BuildingToInstantiate>
         if (string.IsNullOrEmpty(response))
         {
             return;
+        }
+
+        foreach (var building in buildings)
+        {
+            Destroy(building);
         }
 
         FeatureCollection tileGeoJSON = JsonConvert.DeserializeObject<FeatureCollection>(response);
@@ -64,14 +76,8 @@ public class GeoJSONBuildingsVisualizer : Visualizer<BuildingToInstantiate>
             return;
         }
 
-        map.EnqueueObjectToInstantitate(new BuildingToInstantiate(
-            roofInfo,
-            RoofMaterial,
-            tile));
-        map.EnqueueObjectToInstantitate(new BuildingToInstantiate(
-            wallInfo,
-            WallMaterials[UnityEngine.Random.Range(0, WallMaterials.Length)],
-            tile));
+        InstantiateBuilding(roofInfo, RoofMaterial);
+        InstantiateBuilding(wallInfo, WallMaterials[UnityEngine.Random.Range(0, WallMaterials.Length)]);
     }
 
     private void InstantiateGeometryCollection(GeometryCollection geometryCollection, IDictionary<string, dynamic> properties, Tile tile)
@@ -82,21 +88,21 @@ public class GeoJSONBuildingsVisualizer : Visualizer<BuildingToInstantiate>
         }
     }
 
-    protected override GameObject InstantiateObject(BuildingToInstantiate objectToInstantiate)
+    private void InstantiateBuilding(MeshInfo info, Material material)
     {
         GameObject building = Instantiate(BuildingPrefab);
         MeshFilter filter = building.GetComponent<MeshFilter>();
         Mesh mesh = new Mesh();
-        mesh.vertices = objectToInstantiate.Info.Vertices;
-        mesh.triangles = objectToInstantiate.Info.Triangles;
-        mesh.SetUVs(0, new List<Vector2>(objectToInstantiate.Info.UVs));
+        mesh.vertices = info.Vertices;
+        mesh.triangles = info.Triangles;
+        mesh.SetUVs(0, new List<Vector2>(info.UVs));
         mesh.RecalculateTangents();
         mesh.RecalculateNormals();
         mesh.RecalculateBounds();
         mesh.Optimize();
         filter.mesh = mesh;
         MeshRenderer renderer = building.GetComponent<MeshRenderer>();
-        renderer.material = objectToInstantiate.Material;
-        return building;
+        renderer.material = material;
+        buildings.Add(building);
     }
 }

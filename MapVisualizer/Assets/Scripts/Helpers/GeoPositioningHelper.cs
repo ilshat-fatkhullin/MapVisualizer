@@ -19,9 +19,9 @@ public static class GeoPositioningHelper
     {
         float latitudeRadians = coordinate.Latitude * Mathf.Deg2Rad;
         float n = Mathf.Pow(2f, zoom);
-        int xTile = Convert.ToInt32((coordinate.Longitude + 180) / 360 * n);
-        int yTile = Convert.ToInt32((1f - Mathf.Log(Mathf.Tan(latitudeRadians) + (1 / Mathf.Cos(latitudeRadians))) / Mathf.PI) / 2f * n);
-        return new Tile(xTile, yTile, zoom);
+        int xTile = Mathf.RoundToInt((coordinate.Longitude + 180) / 360 * n);
+        int yTile = Mathf.RoundToInt((1f - Mathf.Log(Mathf.Tan(latitudeRadians) + (1 / Mathf.Cos(latitudeRadians))) / Mathf.PI) / 2f * n);
+        return new Tile(xTile, yTile , zoom);
     }
 
     public static BBox GetBBoxFromTile(Tile tile)

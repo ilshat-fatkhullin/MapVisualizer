@@ -1,6 +1,4 @@
-﻿using System;
-
-public class Tile
+﻿public class Tile
 {
     public int X { get; set; }
 

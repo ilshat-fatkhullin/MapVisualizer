@@ -14,14 +14,11 @@ public class Road
 
     public RoadType Type { get; private set; }
 
-    public string Name { get; private set; }
-
-    public Road(int lanes, List<Vector2> nodes, RoadType type, string name)
+    public Road(int lanes, List<Vector2> nodes, RoadType type)
     {
         Lanes = lanes;
         Nodes = nodes;
         Type = type;
-        Name = name;
     }
 
     public static RoadType GetRoadType(string roadType)
@@ -35,5 +32,86 @@ public class Road
         {
             return RoadType.Default;
         }
+    }
+
+    public float GetRoadWidth()
+    {
+        switch (Type)
+        {
+            case RoadType.Default:                
+                if (Lanes > 0)
+                {
+                    return NumericConstants.ROAD_LANE_WIDTH * Lanes;
+                }
+                return NumericConstants.ROAD_LANE_WIDTH;
+            case RoadType.Motorway:
+                if (Lanes > 0)
+                {
+                    return NumericConstants.ROAD_LANE_WIDTH * Lanes;
+                }
+                return NumericConstants.ROAD_LANE_WIDTH;
+            case RoadType.Trunk:
+                if (Lanes > 0)
+                {
+                    return NumericConstants.ROAD_LANE_WIDTH * Lanes;
+                }
+                return NumericConstants.ROAD_LANE_WIDTH;
+            case RoadType.Primary:
+                if (Lanes > 0)
+                {
+                    return NumericConstants.ROAD_LANE_WIDTH * Lanes;
+                }
+                return NumericConstants.ROAD_LANE_WIDTH;
+            case RoadType.Secondary:
+                if (Lanes > 0)
+                {
+                    return NumericConstants.ROAD_LANE_WIDTH * Lanes;
+                }
+                return NumericConstants.ROAD_LANE_WIDTH;
+            case RoadType.Tertiary:
+                if (Lanes > 0)
+                {
+                    return NumericConstants.ROAD_LANE_WIDTH * Lanes;
+                }
+                return NumericConstants.ROAD_LANE_WIDTH;
+            case RoadType.Unclassified:
+                if (Lanes > 0)
+                {
+                    return NumericConstants.ROAD_LANE_WIDTH * Lanes;
+                }
+                return NumericConstants.ROAD_LANE_WIDTH;
+            case RoadType.Residential:
+                if (Lanes > 0)
+                {
+                    return NumericConstants.ROAD_LANE_WIDTH * Lanes;
+                }
+                return NumericConstants.ROAD_LANE_WIDTH;
+            case RoadType.Living_street:
+                return 2 * NumericConstants.ROAD_LANE_WIDTH;
+            case RoadType.Service:
+                return NumericConstants.ROAD_LANE_WIDTH;
+            case RoadType.Pedestrian:
+                return 4 * NumericConstants.ROAD_LANE_WIDTH;
+            case RoadType.Track:
+                return NumericConstants.ROAD_LANE_WIDTH;
+            case RoadType.Bus_guideway:
+                return NumericConstants.ROAD_LANE_WIDTH;
+            case RoadType.Escape:
+                return NumericConstants.ROAD_LANE_WIDTH;
+            case RoadType.Raceway:
+                return 2 * NumericConstants.ROAD_LANE_WIDTH;
+            case RoadType.Road:
+                return NumericConstants.ROAD_LANE_WIDTH;
+            case RoadType.Footway:
+                return NumericConstants.ROAD_LANE_WIDTH;
+            case RoadType.Bridleway:
+                return NumericConstants.ROAD_LANE_WIDTH;
+            case RoadType.Steps:
+                return NumericConstants.ROAD_LANE_WIDTH;
+            case RoadType.Path:
+                return NumericConstants.ROAD_LANE_WIDTH;
+        }
+
+        return NumericConstants.ROAD_LANE_WIDTH;
     }
 }

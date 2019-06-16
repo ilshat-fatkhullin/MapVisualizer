@@ -3,7 +3,7 @@ using UnityEngine;
 using UnityEngine.Networking;
 
 /// <typeparam name="O">Data, which stores all info about how to instantiate an object.</typeparam>
-public abstract class Visualizer<O> : MonoBehaviour where O : ObjectToInstantiate
+public abstract class Visualizer: MonoBehaviour
 {
     public GameObject BuildingPrefab;
 
@@ -11,47 +11,32 @@ public abstract class Visualizer<O> : MonoBehaviour where O : ObjectToInstantiat
 
     public float OriginLongitude;
 
-    public float DelayBetweenBatches;
-
-    public int NumberOfObjectsInBatch;
-
     public int Zoom;
 
     protected Vector2 originInMeters;
 
-    protected VisualizedTileMap<O> map;
-
-    protected Tile centerTile;
+    protected Tile currentTile;
 
     protected virtual void Start()
     {
         originInMeters = GeoPositioningHelper.GetMetersFromCoordinate(new Coordinate(OriginLatitude, OriginLongitude));
-        centerTile = new Tile(0, 0, 0);
-        map = new VisualizedTileMap<O>(centerTile);
-        StartCoroutine(ManageObjects());
+        currentTile = new Tile(0, 0, 0);
     }
 
     private void Update()
     {
-        //Checking if camera moved to another tile.
-
         Vector2 cameraPositionInMeters = new Vector2(Camera.main.transform.position.x, Camera.main.transform.position.z);
         cameraPositionInMeters += originInMeters;
+        cameraPositionInMeters += new Vector2(-NumericConstants.TILE_SIZE, NumericConstants.TILE_SIZE);
 
         Tile currentTile = GeoPositioningHelper.GetTileFromCoordinate(
             GeoPositioningHelper.GetCoordinateFromMeters(cameraPositionInMeters),
             Zoom);
 
-        if (centerTile != currentTile)
+        if (this.currentTile != currentTile)
         {
-            centerTile = currentTile;
-            map.UpdateCenterTile(centerTile);
-
-            foreach (var tileToVisualize in map.TilesToVisualize)
-            {
-                VisualizeTile(tileToVisualize);
-            }
-            map.TilesToVisualize.Clear();          
+            this.currentTile = currentTile;
+            VisualizeTile(currentTile);
         }
     }
 
@@ -80,35 +65,33 @@ public abstract class Visualizer<O> : MonoBehaviour where O : ObjectToInstantiat
         }
     }
 
-    private IEnumerator ManageObjects()
-    {
-        while (true)
-        {
-            for (int i = 0; i < NumberOfObjectsInBatch; i++)
-            {
-                if (map.HasObjectsToInstatiate())
-                {
-                    ObjectToInstantiate objectToInstantiate = map.DequeueObjectToInstantiate();
-
-                    if (map.ContainsTile(objectToInstantiate.Tile))
-                    {
-                        GameObject instantiatedObject = InstantiateObject(objectToInstantiate as O);
-                        map.AddInstantiatedObjectToTile(objectToInstantiate.Tile, instantiatedObject);
-                    }
-                }
-                if (map.HasObjectsToDestroy())
-                {
-                    Destroy(map.DequeueObjectToDestroy());
-                }
-            }
-
-            yield return new WaitForSeconds(DelayBetweenBatches);
-        }
-    }
-
-    protected abstract GameObject InstantiateObject(O objectToInstantiate);
-
     protected abstract string BuildRequest(Tile tile);
 
-    protected abstract void OnNetworkResponse(Tile tile, string response);   
+    protected abstract void OnNetworkResponse(Tile tile, string response);
+
+    private void OnDrawGizmos()
+    {
+        if (currentTile == null)
+            return;
+
+        Gizmos.color = Color.red;
+
+        Vector2 point1 = GeoPositioningHelper.GetMetersFromCoordinate(
+                GeoPositioningHelper.GetNWCoordinateFromTile(currentTile)) - originInMeters;
+
+        Vector2 point2 = GeoPositioningHelper.GetMetersFromCoordinate(
+                GeoPositioningHelper.GetNWCoordinateFromTile(new Tile(currentTile.X + 1, currentTile.Y + 1, currentTile.Zoom))) - originInMeters;
+
+        Vector2 point3 = GeoPositioningHelper.GetMetersFromCoordinate(
+                GeoPositioningHelper.GetNWCoordinateFromTile(new Tile(currentTile.X + 1, currentTile.Y, currentTile.Zoom))) - originInMeters;
+
+        Vector2 point4 = GeoPositioningHelper.GetMetersFromCoordinate(
+                GeoPositioningHelper.GetNWCoordinateFromTile(new Tile(currentTile.X, currentTile.Y + 1, currentTile.Zoom))) - originInMeters;
+
+        Gizmos.DrawLine(new Vector3(point1.x, 10, point1.y), new Vector3(point2.x, 10, point2.y));
+        Gizmos.DrawLine(new Vector3(point1.x, 10, point1.y), new Vector3(point3.x, 10, point3.y));
+        Gizmos.DrawLine(new Vector3(point1.x, 10, point1.y), new Vector3(point4.x, 10, point4.y));
+        Gizmos.DrawLine(new Vector3(point2.x, 10, point2.y), new Vector3(point3.x, 10, point3.y));
+        Gizmos.DrawLine(new Vector3(point2.x, 10, point2.y), new Vector3(point4.x, 10, point4.y));
+    }
 }
