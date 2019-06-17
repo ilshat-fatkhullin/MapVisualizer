@@ -1,11 +1,10 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
 
-public class Road
+public class Road: Surface, IComparable<Road>
 {
     public int Lanes { get; private set; }
-
-    public List<Vector2> Nodes { get; private set; }
 
     public enum RoadType { Default,
                            Motorway, Trunk, Primary, Secondary, Tertiary, Unclassified, Residential,
@@ -14,24 +13,15 @@ public class Road
 
     public RoadType Type { get; private set; }
 
-    public Road(int lanes, List<Vector2> nodes, RoadType type)
+    public Road(int lanes, List<Vector2> nodes, RoadType type): base(nodes)
     {
         Lanes = lanes;
-        Nodes = nodes;
         Type = type;
     }
 
     public static RoadType GetRoadType(string roadType)
     {
-        try
-        {
-            RoadType type = (RoadType)System.Enum.Parse(typeof(RoadType), roadType);
-            return type;
-        }
-        catch
-        {
-            return RoadType.Default;
-        }
+        return EnumHelper.GetTypeFromString<RoadType>(roadType, RoadType.Default);
     }
 
     public float GetRoadWidth()
@@ -113,5 +103,21 @@ public class Road
         }
 
         return NumericConstants.ROAD_LANE_WIDTH;
+    }
+
+    public int CompareTo(Road other)
+    {
+        if (Type == RoadType.Default)
+            return -1;
+
+        if (other.Type == RoadType.Default)
+            return 1;
+
+        if (other.Type > Type)
+            return 1;
+        else if (other.Type < Type)
+            return -1;
+
+        return 0;
     }
 }

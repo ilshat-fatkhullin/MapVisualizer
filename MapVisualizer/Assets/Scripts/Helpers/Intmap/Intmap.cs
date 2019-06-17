@@ -1,4 +1,5 @@
 ﻿using System;
+using UnityEngine;
 
 public class Intmap
 {
@@ -39,5 +40,47 @@ public class Intmap
             if (e2 > -dx) { err -= dy; x0 += sx; }
             if (e2 < dy) { err += dx; y0 += sy; }
         }
+    }
+
+    public void DrawFilledPolygon(Point2D[] points, int value)
+    {
+        DrawPolygon(points, value);
+
+        int minX = int.MaxValue, minY = int.MaxValue, maxX = int.MinValue, maxY = int.MinValue;
+
+        foreach (var point in points)
+        {
+            minX = Mathf.Max(Mathf.Min(minX, point.X), 0);
+            minY = Mathf.Max(Mathf.Min(minY, point.Y), 0);
+            maxX = Math.Min(Mathf.Max(maxX, point.X), Width - 1);
+            maxY = Math.Min(Mathf.Max(maxY, point.Y), Height - 1);
+        }
+
+        for (int x = minX; x <= maxX; x++)
+        {
+            int y1 = maxY;
+            int y2 = minY;
+
+            for (int y = minY; y <= maxY; y++)
+            {
+                if (Map[x, y] == value)
+                {
+                    y1 = Mathf.Min(y, y1);
+                    y2 = Mathf.Max(y, y1);
+                }
+            }
+
+            DrawLine(new Point2D(x, y1), new Point2D(x, y2), value, 1);
+        }
+    }
+
+    private void DrawPolygon(Point2D[] points, int value)
+    {
+        for (int i = 1; i < points.Length; i++)
+        {
+            DrawLine(points[i - 1], points[i], value, 1);
+        }
+
+        DrawLine(points[0], points[points.Length - 1], value, 1);
     }
 }
