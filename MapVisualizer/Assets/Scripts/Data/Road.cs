@@ -13,7 +13,7 @@ public class Road: Surface, IComparable<Road>
 
     public RoadType Type { get; private set; }
 
-    public Road(int lanes, List<Vector2> nodes, RoadType type): base(nodes)
+    public Road(int lanes, Vector2[] nodes, RoadType type): base(nodes)
     {
         Lanes = lanes;
         Type = type;

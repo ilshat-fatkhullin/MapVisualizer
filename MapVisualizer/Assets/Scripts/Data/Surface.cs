@@ -3,9 +3,9 @@ using UnityEngine;
 
 public abstract class Surface
 {
-    public List<Vector2> Nodes { get; private set; }
+    public Vector2[] Nodes { get; private set; }
 
-    public Surface(List<Vector2> nodes)
+    public Surface(Vector2[] nodes)
     {
         Nodes = nodes;
     }

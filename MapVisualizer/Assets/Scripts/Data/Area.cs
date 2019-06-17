@@ -8,7 +8,7 @@ public class Area: Surface, IComparable<Area>
 
     public AreaType Type { get; private set; }
 
-    public Area(List<Vector2> nodes, AreaType type): base(nodes)
+    public Area(Vector2[] nodes, AreaType type): base(nodes)
     {
         Type = type;
     }

@@ -1,14 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Xml;
 using UnityEngine;
 
-public class RoadsVisualizer : Visualizer
+/// <summary>
+/// Paints all textures based on provided osm file
+/// </summary>
+public class SurfaceVisualizer : Visualizer
 {
-    public Terrain Terrain;
-
-    private CultureInfo info = new CultureInfo("en-US");
+    public Terrain Terrain;    
 
     private Dictionary<string, Vector2> allNodes;
 
@@ -37,8 +37,10 @@ public class RoadsVisualizer : Visualizer
     {
         BBox bBox = GeoPositioningHelper.GetBBoxFromTile(tile);
         return string.Format(StringConstants.OSMTileRequestPattern,
-            Convert.ToString(bBox.MinLongitude, info), Convert.ToString(bBox.MinLatitude, info),
-            Convert.ToString(bBox.MaxLongitude, info), Convert.ToString(bBox.MaxLatitude, info));
+            Convert.ToString(bBox.MinLongitude, CultureInfoHelper.EnUSInfo),
+            Convert.ToString(bBox.MinLatitude, CultureInfoHelper.EnUSInfo),
+            Convert.ToString(bBox.MaxLongitude, CultureInfoHelper.EnUSInfo),
+            Convert.ToString(bBox.MaxLatitude, CultureInfoHelper.EnUSInfo));
     }
 
     protected override void OnNetworkResponse(Tile tile, string response)
@@ -49,82 +51,61 @@ public class RoadsVisualizer : Visualizer
     }
 
     private void RetrieveRoads(string response)
-    {
-        allNodes = new Dictionary<string, Vector2>();
+    {        
+        Vector2 terrainOrigin = new Vector2(Terrain.transform.position.x, Terrain.transform.position.z);
+
+        OsmFile osmFile = new OsmFile(response, originInMeters + terrainOrigin);
+
         roads = new PriorityQueue<Road>();
         areas = new PriorityQueue<Area>();
 
-        XmlDocument document = new XmlDocument();
-        document.LoadXml(response);
-        XmlElement root = document.DocumentElement;
-
-        Vector2 terrainOrigin = new Vector2(Terrain.transform.position.x, Terrain.transform.position.z);
-
-        foreach (XmlNode node in root)
+        foreach (OsmWay way in osmFile.GetWays())
         {
-            if (node.Name == "node")
+            List<OsmNode> nodes = way.GetNodes();
+            Vector2[] points = new Vector2[nodes.Count];
+
+            for (int i = 0; i < nodes.Count; i++)
             {
-
-                Vector2 coordinates = GeoPositioningHelper.GetMetersFromCoordinate(
-                    new Coordinate(
-                    Convert.ToSingle(node.Attributes.GetNamedItem("lat").Value, info),
-                    Convert.ToSingle(node.Attributes.GetNamedItem("lon").Value, info)
-                    )) - originInMeters - terrainOrigin;
-
-                allNodes.Add(node.Attributes.GetNamedItem("id").Value, coordinates);
+                points[i] = nodes[i].Coordinate;
             }
-        }
 
-        foreach (XmlNode node in root)
-        {
-            if (node.Name == "way")
+            int lanes = 1;
+            Road.RoadType roadType = Road.RoadType.Default;
+            Area.AreaType areaType = Area.AreaType.Default;
+
+            string lanesStr = way.GetTagValue("lanes");            
+            string highwaysStr = way.GetTagValue("highway");
+            string landuseStr = way.GetTagValue("landuse");
+            string leisureStr = way.GetTagValue("leisure");
+
+            if (lanesStr != null)
             {
-                List<Vector2> nodes = new List<Vector2>();
+                lanes = Convert.ToInt32(lanesStr);
+            }            
 
-                int lanes = 1;
-                Road.RoadType roadType = Road.RoadType.Default;
+            if (highwaysStr != null)
+            {
+                roadType = Road.GetRoadType(highwaysStr);
+            }
 
-                Area.AreaType areaType = Area.AreaType.Default;
+            if (landuseStr != null)
+            {
+                areaType = Area.GetAreaType(landuseStr);
+            }
 
-                foreach (XmlNode subNode in node.ChildNodes)
-                {
-                    if (subNode.Name == "nd")
-                    {
-                        nodes.Add(allNodes[subNode.Attributes.GetNamedItem("ref").Value]);
-                        continue;
-                    }
+            if (leisureStr != null)
+            {
+                areaType = Area.GetAreaType(leisureStr);
+            }
 
-                    if (subNode.Name == "tag")
-                    {
-                        string key = subNode.Attributes.GetNamedItem("k").Value;
-                        string value = subNode.Attributes.GetNamedItem("v").Value;
+            if (areaType != Area.AreaType.Default)
+            {
+                areas.Enqueue(new Area(points, areaType));
+            }
 
-                        if (key == "lanes")
-                        {
-                            lanes = Convert.ToInt32(value);
-                        }
-                        else if (key == "highway")
-                        {
-                            value = char.ToUpper(value[0]) + value.Substring(1);
-                            roadType = Road.GetRoadType(value);
-                        }
-                        else if (key == "landuse" || key == "leisure")
-                        {
-                            value = char.ToUpper(value[0]) + value.Substring(1);
-                            areaType = Area.GetAreaType(value);
-                        }
-                    }
-                }
-
-                if (areaType != Area.AreaType.Default)
-                {
-                    areas.Enqueue(new Area(nodes, areaType));
-                }
-
-                if (roadType != Road.RoadType.Default)
-                {
-                    roads.Enqueue(new Road(lanes, nodes, roadType));
-                }
+            if (roadType != Road.RoadType.Default)
+            {
+                roads.Enqueue(new Road(lanes, points, roadType));
             }
         }
     }
@@ -150,10 +131,10 @@ public class RoadsVisualizer : Visualizer
         {
             Area area = areas.Dequeue();
 
-            if (area.Nodes.Count < 3)
+            if (area.Nodes.Length < 3)
                 continue;
 
-            Point2D[] points = new Point2D[area.Nodes.Count];
+            Point2D[] points = new Point2D[area.Nodes.Length];
 
             for (int i = 0; i < points.Length; i++)
             {
@@ -167,10 +148,10 @@ public class RoadsVisualizer : Visualizer
         {
             Road road = roads.Dequeue();
 
-            if (road.Nodes.Count < 2)
+            if (road.Nodes.Length < 2)
                 continue;
 
-            for (int i = 1; i < road.Nodes.Count; i++)
+            for (int i = 1; i < road.Nodes.Length; i++)
             {
                 Point2D point1 = GetTerrainMapPoint(road.Nodes[i - 1]);
                 Point2D point2 = GetTerrainMapPoint(road.Nodes[i]);
