@@ -10,7 +10,7 @@ public class OsmFile
 
     private Dictionary<string, OsmWay> keyToWay;
 
-    public OsmFile(string file, Vector2 origin)
+    public OsmFile(string file)
     {
         keyToNode = new Dictionary<string, OsmNode>();
         keyToWay = new Dictionary<string, OsmWay>();
@@ -28,7 +28,7 @@ public class OsmFile
                     new Coordinate(
                     Convert.ToSingle(node.Attributes.GetNamedItem("lat").Value, CultureInfoHelper.EnUSInfo),
                     Convert.ToSingle(node.Attributes.GetNamedItem("lon").Value, CultureInfoHelper.EnUSInfo)
-                    )) - origin;
+                    ));
 
                 keyToNode.Add(node.Attributes.GetNamedItem("id").Value, new OsmNode(coordinates));
             }
