@@ -1,5 +1,4 @@
 ﻿using BAMCIS.GeoJSON;
-using Newtonsoft.Json;
 using System.Collections.Generic;
 using UnityEngine;
 using static BuildingPropertiesHelper;
