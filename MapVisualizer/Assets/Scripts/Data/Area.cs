@@ -13,9 +13,9 @@ public class Area: Surface, IComparable<Area>
         Type = type;
     }
 
-    public static AreaType GetAreaType(string roadType)
+    public static AreaType GetAreaType(string areaType)
     {
-        return EnumHelper.GetTypeFromString<AreaType>(roadType, AreaType.Default);
+        return EnumHelper.GetTypeFromString(areaType, AreaType.Default);
     }
 
     public int CompareTo(Area other)

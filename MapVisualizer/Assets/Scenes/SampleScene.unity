@@ -225,6 +225,8 @@ GameObject:
   - component: {fileID: 322427329}
   - component: {fileID: 322427325}
   - component: {fileID: 322427327}
+  - component: {fileID: 322427330}
+  - component: {fileID: 322427331}
   m_Layer: 0
   m_Name: GameController
   m_TagString: GameController
@@ -278,6 +280,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Terrain: {fileID: 878284371}
+  DamageBluringDegree: 5
+  DamageRarity: 400
+  DamageStrength: 2
 --- !u!114 &322427328
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -305,6 +310,37 @@ MonoBehaviour:
   OriginLatitude: 55.7853
   OriginLongitude: 49.1181
   Zoom: 16
+--- !u!114 &322427330
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 322427324}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cf04ccb462fad6249a5425db029e91ae, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  KerbPrefab: {fileID: 6171164336094472626, guid: dc8d5b9f0754e914f8a68370c53934d0,
+    type: 3}
+  FencePrefab: {fileID: 6039689150483995130, guid: 2d3fb0f9c4a706a48a4a4cfc2122d3bb,
+    type: 3}
+--- !u!114 &322427331
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 322427324}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6bfec4395a520e643bd93149369aca08, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  DividingStripPrefab: {fileID: 5674711120760252329, guid: 67728a8f27c970e4a890467c9937ef07,
+    type: 3}
+  Step: 6
 --- !u!1 &534669902
 GameObject:
   m_ObjectHideFlags: 0

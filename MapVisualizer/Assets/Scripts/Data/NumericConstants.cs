@@ -8,9 +8,9 @@
 
     public const float TILE_SIZE = 256;
 
-    public const float ROAD_LANE_WIDTH = 3f;
+    public const float ROAD_LANE_WIDTH = 3.7f;
 
-    public const float ROAD_Y_OFFSET = 0.125f;
+    public const float ROAD_Y_OFFSET = 0.025f;
 
     public const float ROAD_SPLINE_STEP = 0.25f;
 }

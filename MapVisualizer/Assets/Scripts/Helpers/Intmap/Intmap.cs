@@ -22,12 +22,13 @@ public class Intmap
         int dx = Math.Abs(x1 - x0), sx = x0 < x1 ? 1 : -1;
         int dy = Math.Abs(y1 - y0), sy = y0 < y1 ? 1 : -1;
         int err = (dx > dy ? dx : -dy) / 2, e2;
+        int halfWidth = width / 2;
         for (; ; )
         {
             if (x0 >= 0 && x0 < Width && y0 >= 0 && y0 < Height)
-            {
-                for (int i = x0 - width + 1; i < x0 + width; i++)
-                    for (int j = y0 - width + 1; j < y0 + width; j++)
+            {                
+                for (int i = x0 - halfWidth; i <= x0 + halfWidth; i++)
+                    for (int j = y0 - halfWidth; j <= y0 + halfWidth; j++)
                     {
                         if (i >= 0 && i < Width && j >= 0 && j < Height)
                         {
@@ -40,7 +41,7 @@ public class Intmap
             if (e2 > -dx) { err -= dy; x0 += sx; }
             if (e2 < dy) { err += dx; y0 += sy; }
         }
-    }
+    }    
 
     public void DrawFilledPolygon(Point2D[] points, int value)
     {

@@ -1,6 +1,6 @@
 ﻿using BAMCIS.GeoJSON;
 using Newtonsoft.Json;
-using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 public class VisualizingManager : Singleton<VisualizingManager>
@@ -51,7 +51,13 @@ public class VisualizingManager : Singleton<VisualizingManager>
         {
             case NetworkManager.RequestType.OsmFile:
                 OsmFile osmFile = new OsmFile(response);
-                TerrainVisualizer.Instance.VisualizeTile(tile, osmFile, originInMeters);
+
+                List<Road> roads = OsmFileParser.GetRoads(osmFile);
+                List<Area> areas = OsmFileParser.GetAreas(osmFile);
+
+                TerrainVisualizer.Instance.VisualizeTile(tile, roads, areas, originInMeters);
+                BarriersVisualizer.Instance.VisualizeTile(tile, osmFile, originInMeters);
+                MarkupVisualizer.Instance.VisualizeTile(tile, roads, originInMeters);
                 break;
             case NetworkManager.RequestType.GeoJSON:
                 FeatureCollection featureCollection = JsonConvert.DeserializeObject<FeatureCollection>(response);

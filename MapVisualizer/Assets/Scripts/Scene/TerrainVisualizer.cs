@@ -7,15 +7,23 @@ using UnityEngine;
 /// </summary>
 public class TerrainVisualizer : Singleton<TerrainVisualizer>
 {
-    public Terrain Terrain;    
+    public Terrain Terrain;
+
+    [Range(0, 5)]
+    public int DamageBluringDegree;
+
+    public int DamageRarity;
+
+    [Range(0f, 5f)]
+    public float DamageStrength;
 
     private Dictionary<string, Vector2> allNodes;
 
-    private PriorityQueue<Road> roads;
+    private PriorityQueue<Road> roadsQueue;
 
-    private PriorityQueue<Area> areas;
+    private PriorityQueue<Area> areasQueue;
 
-    private Intmap intmap;
+    private Intmap surfaceIntmap;    
 
     private Vector2 terrainSize;
 
@@ -26,68 +34,30 @@ public class TerrainVisualizer : Singleton<TerrainVisualizer>
         nameToTerrainLayer = new Dictionary<string, int>();
     }
 
-    public void VisualizeTile(Tile tile, OsmFile file, Vector2 originInMeters)
+    public void VisualizeTile(Tile tile, List<Road> roads, List<Area> areas, Vector2 originInMeters)
     {
         UpdateTerrainTransform(tile, originInMeters);
-        RetrieveRoads(file, originInMeters);
+        RetrieveRoads(roads, areas, originInMeters);
         UpdateTerrain();
     }
 
-    private void RetrieveRoads(OsmFile file, Vector2 originInMeters)
+    private void RetrieveRoads(List<Road> roads, List<Area> areas, Vector2 originInMeters)
     {        
         Vector2 terrainOrigin = new Vector2(Terrain.transform.position.x, Terrain.transform.position.z);
 
-        roads = new PriorityQueue<Road>();
-        areas = new PriorityQueue<Area>();
+        roadsQueue = new PriorityQueue<Road>();
+        areasQueue = new PriorityQueue<Area>();
 
-        foreach (OsmWay way in file.GetWays())
+        foreach (var road in roads)
         {
-            List<OsmNode> nodes = way.GetNodes();
-            Vector2[] points = new Vector2[nodes.Count];
+            roadsQueue.Enqueue(new Road(road.Lanes, road.Width,
+                road.GetNodesRelatedToOrigin(originInMeters + terrainOrigin),
+                road.Type));
+        }
 
-            for (int i = 0; i < nodes.Count; i++)
-            {
-                points[i] = nodes[i].Coordinate - originInMeters - terrainOrigin;
-            }
-
-            int lanes = 1;
-            Road.RoadType roadType = Road.RoadType.Default;
-            Area.AreaType areaType = Area.AreaType.Default;
-
-            string lanesStr = way.GetTagValue("lanes");            
-            string highwaysStr = way.GetTagValue("highway");
-            string landuseStr = way.GetTagValue("landuse");
-            string leisureStr = way.GetTagValue("leisure");
-
-            if (lanesStr != null)
-            {
-                lanes = Convert.ToInt32(lanesStr);
-            }            
-
-            if (highwaysStr != null)
-            {
-                roadType = Road.GetRoadType(highwaysStr);
-            }
-
-            if (landuseStr != null)
-            {
-                areaType = Area.GetAreaType(landuseStr);
-            }
-
-            if (leisureStr != null)
-            {
-                areaType = Area.GetAreaType(leisureStr);
-            }
-
-            if (areaType != Area.AreaType.Default)
-            {
-                areas.Enqueue(new Area(points, areaType));
-            }
-
-            if (roadType != Road.RoadType.Default)
-            {
-                roads.Enqueue(new Road(lanes, points, roadType));
-            }
+        foreach (var area in areas)
+        {
+            areasQueue.Enqueue(new Area(area.GetNodesRelatedToOrigin(originInMeters + terrainOrigin), area.Type));
         }
     }
 
@@ -106,11 +76,11 @@ public class TerrainVisualizer : Singleton<TerrainVisualizer>
 
     private void UpdateTerrain()
     {        
-        intmap = new Intmap(Terrain.terrainData.alphamapWidth, Terrain.terrainData.alphamapHeight);
+        surfaceIntmap = new Intmap(Terrain.terrainData.alphamapWidth, Terrain.terrainData.alphamapHeight);
 
-        while (areas.Count() > 0)
+        while (areasQueue.Count() > 0)
         {
-            Area area = areas.Dequeue();
+            Area area = areasQueue.Dequeue();
 
             if (area.Nodes.Length < 3)
                 continue;
@@ -122,12 +92,13 @@ public class TerrainVisualizer : Singleton<TerrainVisualizer>
                 points[i] = GetTerrainMapPoint(area.Nodes[i]);
             }
 
-            intmap.DrawFilledPolygon(points, GetTerrainLayerByString(Enum.GetName(typeof(Area.AreaType), area.Type)));
+            surfaceIntmap.DrawFilledPolygon(points,
+                GetTerrainLayerByString(Enum.GetName(typeof(Area.AreaType), area.Type), true));
         }
 
-        while (roads.Count() > 0)
+        while (roadsQueue.Count() > 0)
         {
-            Road road = roads.Dequeue();
+            Road road = roadsQueue.Dequeue();
 
             if (road.Nodes.Length < 2)
                 continue;
@@ -137,27 +108,54 @@ public class TerrainVisualizer : Singleton<TerrainVisualizer>
                 Point2D point1 = GetTerrainMapPoint(road.Nodes[i - 1]);
                 Point2D point2 = GetTerrainMapPoint(road.Nodes[i]);
 
-                intmap.DrawLine(point1, point2,
-                                GetTerrainLayerByString(Enum.GetName(typeof(Road.RoadType), road.Type)),
-                                MetersToTerrainMapCells(road.GetRoadWidth()));
+                surfaceIntmap.DrawLine(point1, point2,
+                    GetTerrainLayerByString(Enum.GetName(typeof(Road.RoadType), road.Type), true),
+                    MetersToTerrainMapCells(road.GetRoadWidth()));
             }
         }
 
         float[,,] alphamap = new float[Terrain.terrainData.alphamapWidth, Terrain.terrainData.alphamapHeight, Terrain.terrainData.alphamapLayers];
 
-        for (int x = 0; x < alphamap.GetLength(0); x++)
-            for (int y = 0; y < alphamap.GetLength(1); y++)
-                for (int l = 0; l < alphamap.GetLength(2); l++)
+        for (int surfaceLayer = 0; surfaceLayer < alphamap.GetLength(2); surfaceLayer++)
+        {
+            if (!IsSurfaceLayer(surfaceLayer))
+                continue;
+
+            for (int x = 0; x < alphamap.GetLength(0); x++)
+                for (int y = 0; y < alphamap.GetLength(1); y++)
                 {
-                    if (intmap.Map[x, y] == l)
+                    if (surfaceIntmap.Map[x, y] == surfaceLayer)
                     {
-                        alphamap[y, x, l] = 1;
-                    }
-                    else
-                    {
-                        alphamap[y, x, l] = 0;
+                        alphamap[y, x, surfaceLayer] = 1;
                     }
                 }
+        }
+
+        float[,] damageMap = new float[alphamap.GetLength(0), alphamap.GetLength(1)];
+
+        for (int x = 0; x < damageMap.GetLength(0); x++)
+            for (int y = 0; y < damageMap.GetLength(1); y++)
+            {
+                if (UnityEngine.Random.Range(0, DamageRarity) != 0)
+                    continue;
+
+                 damageMap[x, y] = UnityEngine.Random.Range(0f, DamageStrength);    
+            }
+
+        for (int i = 0; i < DamageBluringDegree; i++)
+        {
+            BlurHelper.Blur(damageMap);
+        }        
+
+        for (int x = 0; x < damageMap.GetLength(0); x++)
+            for (int y = 0; y < damageMap.GetLength(1); y++)
+            {
+                int damageLayer = GetDamageLayer(surfaceIntmap.Map[x, y]);
+                if (damageLayer != 0)
+                {
+                    alphamap[y, x, damageLayer] = Mathf.Clamp(damageMap[x, y], 0, 1);
+                }
+            }
 
         Terrain.terrainData.SetAlphamaps(0, 0, alphamap);
     }
@@ -173,25 +171,46 @@ public class TerrainVisualizer : Singleton<TerrainVisualizer>
         return Mathf.RoundToInt(meters * Terrain.terrainData.alphamapWidth / terrainSize.x);
     }
 
-    private int GetTerrainLayerByString(string name)
+    private int GetTerrainLayerByString(string name, bool isSurface)
     {
-        if (nameToTerrainLayer.ContainsKey(name))
+        string n;
+
+        if (isSurface)
         {
-            return nameToTerrainLayer[name];
+            n = "S_" + name;
+        }
+        else
+        {
+            n = "D_" + name;
+        }
+
+        if (nameToTerrainLayer.ContainsKey(n))
+        {
+            return nameToTerrainLayer[n];
         }
 
         int layer = 0;
 
         for (int i = 0; i < Terrain.terrainData.terrainLayers.Length; i++)
         {
-            if (Terrain.terrainData.terrainLayers[i].name == name)
+            if (Terrain.terrainData.terrainLayers[i].name == n)
             {
                 layer = i;
                 break;
             }
         }
 
-        nameToTerrainLayer.Add(name, layer);
+        nameToTerrainLayer.Add(n, layer);
         return layer;
+    }
+
+    private bool IsSurfaceLayer(int layer)
+    {
+        return Terrain.terrainData.terrainLayers[layer].name[0] == 'S';
+    }
+
+    private int GetDamageLayer(int layer)
+    {
+        return GetTerrainLayerByString(Terrain.terrainData.terrainLayers[layer].name.Substring(2), false);
     }
 }
