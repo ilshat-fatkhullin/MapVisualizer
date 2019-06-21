@@ -4,10 +4,24 @@ using UnityEngine;
 
 public static class BuildingPropertiesHelper
 {
-    public static MeshInfo GetRoofInfo(PolygonLoops polygonLoops, IDictionary<string, dynamic> properties)
+    public static int GetNumberOfLevels(IDictionary<string, dynamic> properties)
     {
-        float height = GetHeightFromProperties(properties);
+        if (properties.ContainsKey("levels"))
+        {
+            return (int)properties["levels"];
+        }
 
+        if (properties.ContainsKey("height"))
+        {
+            float height = properties["height"];
+            return Mathf.RoundToInt(height / NumericConstants.LEVEL_HEIGHT);
+        }
+
+        return 1;
+    }
+
+    public static MeshInfo GetRoofInfo(PolygonLoops polygonLoops, float height)
+    {
         Vector2[] outerLoop = polygonLoops.OuterLoop;
         Vector2[][] holeLoops = polygonLoops.InnerLoops;        
 
@@ -150,7 +164,7 @@ public static class BuildingPropertiesHelper
             return GetHeightFromLevel((int)properties["levels"]);
         }
 
-        return NumericConstants.FIRST_LEVEL_HEIGHT;
+        return NumericConstants.LEVEL_HEIGHT;
     }
 
     private static float GetHeightFromLevel(int level)
@@ -160,27 +174,27 @@ public static class BuildingPropertiesHelper
             return 0;
         }
 
-        return NumericConstants.FIRST_LEVEL_HEIGHT + (level - 1) * NumericConstants.NON_FIRST_LEVEL_HEIGHT;
+        return level * NumericConstants.LEVEL_HEIGHT;
     }
+}
 
-    public class PolygonLoops
+public class PolygonLoops
+{
+    public Vector2[] OuterLoop { get; private set; }
+
+    public Vector2[][] InnerLoops { get; private set; }
+
+    public Vector2[][] AllLoops { get; private set; }
+
+    public PolygonLoops(Vector2[] outerLoop, Vector2[][] innerLoops)
     {
-        public Vector2[] OuterLoop { get; private set; }
-
-        public Vector2[][] InnerLoops { get; private set; }
-
-        public Vector2[][] AllLoops { get; private set; }
-
-        public PolygonLoops(Vector2[] outerLoop, Vector2[][] innerLoops)
+        OuterLoop = outerLoop;
+        InnerLoops = innerLoops;
+        AllLoops = new Vector2[1 + InnerLoops.Length][];
+        AllLoops[0] = OuterLoop;
+        for (int i = 0; i < InnerLoops.Length; i++)
         {
-            OuterLoop = outerLoop;
-            InnerLoops = innerLoops;
-            AllLoops = new Vector2[1 + InnerLoops.Length][];
-            AllLoops[0] = OuterLoop;
-            for (int i = 0; i < InnerLoops.Length; i++)
-            {
-                AllLoops[i + 1] = InnerLoops[i];
-            }
+            AllLoops[i + 1] = InnerLoops[i];
         }
     }
 }

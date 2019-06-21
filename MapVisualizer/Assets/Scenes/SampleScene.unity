@@ -246,13 +246,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ef7d1ccb8d0e93445adc386818d6c51a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  BuildingPrefab: {fileID: 3076484014762704044, guid: 41e4a0a54025e9043893952b8f7f1c59,
-    type: 3}
-  WallMaterials:
-  - {fileID: 2100000, guid: 0a582a9f621d95046a188fa43e0c0110, type: 2}
-  - {fileID: 2100000, guid: 0a98b165b7ad0054c92ea6cf03b29610, type: 2}
-  - {fileID: 2100000, guid: dc94472db374f7948a9e2cce03b4e10b, type: 2}
+  Roof: {fileID: 3076484014762704044, guid: 41e4a0a54025e9043893952b8f7f1c59, type: 3}
   RoofMaterial: {fileID: 2100000, guid: 37da190aea7952541a269873de7bf3cf, type: 2}
+  FacadeContainer: {fileID: 3391367350425759653, guid: 4e0c03eec5bd512469c62b5d8b9f7fd7,
+    type: 3}
+  BaseFacades:
+  - {fileID: 7106796843414558913, guid: 484fe57f9075b0748ba2b8ce65e7412b, type: 3}
+  MiddleFacades:
+  - {fileID: 131651182578465364, guid: 0453e3ff26355324e840afdb22f1d141, type: 3}
 --- !u!4 &322427326
 Transform:
   m_ObjectHideFlags: 0
