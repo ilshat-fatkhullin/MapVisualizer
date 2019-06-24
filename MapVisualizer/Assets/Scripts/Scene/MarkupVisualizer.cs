@@ -3,21 +3,23 @@ using UnityEngine;
 
 public class MarkupVisualizer : Singleton<MarkupVisualizer>
 {
+    public GameObject DividingStripContainerPrefab;
+
     public GameObject DividingStripPrefab;
 
     [Range(1f, 10f)]
     public float Step;
 
-    private List<GameObject> strips;
+    private List<GameObject> stripContainers;
 
     private void Awake()
     {
-        strips = new List<GameObject>();
+        stripContainers = new List<GameObject>();
     }
 
     public void VisualizeTile(Tile tile, List<Road> roads, Vector2 originInMeters)
     {
-        foreach (var strip in strips)
+        foreach (var strip in stripContainers)
         {
             Destroy(strip);
         }
@@ -70,13 +72,17 @@ public class MarkupVisualizer : Singleton<MarkupVisualizer>
 
         Quaternion rotation =  Quaternion.LookRotation(direction);
 
+        GameObject stripsContainer = Instantiate(DividingStripContainerPrefab);
+
         for (int i = 1; i < lanes; i++)
         {
             GameObject strip = Instantiate(DividingStripPrefab,
                        Vector3.Lerp(leftPoint, rightPoint, (float)i / lanes),
                        rotation);
 
-            strips.Add(strip);
+            strip.transform.parent = stripsContainer.transform;         
         }
+
+        stripContainers.Add(stripsContainer);
     }
 }

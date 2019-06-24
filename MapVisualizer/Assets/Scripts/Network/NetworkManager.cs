@@ -41,16 +41,15 @@ public class NetworkManager: Singleton<NetworkManager>
         if (www.isNetworkError || www.isHttpError)
         {
             Debug.LogError(www.error);
-            yield return null;
         }
-
-        if (www.isHttpError)
+        else if (www.isHttpError)
         {
             Debug.LogError("Invalid response received");
-            yield return null;
         }
-
-        OnDowloaded.Invoke(tile, requestType, www.downloadHandler.text);
+        else
+        {
+            OnDowloaded.Invoke(tile, requestType, www.downloadHandler.text);
+        }
     }
 
     private string BuildGeoJSONRequest(Tile tile)

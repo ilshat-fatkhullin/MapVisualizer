@@ -1,6 +1,4 @@
-﻿using BAMCIS.GeoJSON;
-using Newtonsoft.Json;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 public class VisualizingManager : Singleton<VisualizingManager>
@@ -11,14 +9,23 @@ public class VisualizingManager : Singleton<VisualizingManager>
 
     public int Zoom;
 
-    protected Vector2 originInMeters;
+    private Vector2 originInMeters;
 
-    protected Tile currentTile;
+    private Tile currentTile;
+
+    private List<MultithreadedOsmFileParser> osmFileParsers;
+
+    private List<MultithreadedOsmGeoJSONParser> osmGeoJSONParsers;
 
     protected virtual void Start()
     {
         originInMeters = GeoPositioningHelper.GetMetersFromCoordinate(new Coordinate(OriginLatitude, OriginLongitude));
         currentTile = new Tile(0, 0, 0);
+
+        osmFileParsers = new List<MultithreadedOsmFileParser>();
+        osmGeoJSONParsers = new List<MultithreadedOsmGeoJSONParser>();
+
+        NetworkManager.Instance.OnDowloaded.AddListener(OnNetworkResponse);
     }
 
     private void Update()
@@ -34,15 +41,34 @@ public class VisualizingManager : Singleton<VisualizingManager>
         if (this.currentTile != currentTile)
         {
             this.currentTile = currentTile;
-            VisualizeTile(currentTile);
+            DownloadTile(currentTile);
+        }
+
+        for (int i = 0; i < osmFileParsers.Count; i++)
+        {
+            if (osmFileParsers[i].IsCompleted)
+            {
+                VisualizeOsmFile(osmFileParsers[i]);
+                osmFileParsers.RemoveAt(i);
+                break;
+            }
+        }
+
+        for (int i = 0; i < osmGeoJSONParsers.Count; i++)
+        {
+            if (osmGeoJSONParsers[i].IsCompleted)
+            {
+                VisualizeGeoJSON(osmGeoJSONParsers[i]);
+                osmGeoJSONParsers.RemoveAt(i);
+                break;
+            }
         }
     }
 
-    private void VisualizeTile(Tile tile)
+    private void DownloadTile(Tile tile)
     {
         NetworkManager.Instance.DownloadTile(tile, NetworkManager.RequestType.GeoJSON);
-        NetworkManager.Instance.DownloadTile(tile, NetworkManager.RequestType.OsmFile);
-        NetworkManager.Instance.OnDowloaded.AddListener(OnNetworkResponse);
+        NetworkManager.Instance.DownloadTile(tile, NetworkManager.RequestType.OsmFile);        
     }
 
     private void OnNetworkResponse(Tile tile, NetworkManager.RequestType type, string response)
@@ -50,19 +76,28 @@ public class VisualizingManager : Singleton<VisualizingManager>
         switch (type)
         {
             case NetworkManager.RequestType.OsmFile:
-                OsmFile osmFile = new OsmFile(response);
-
-                List<Road> roads = OsmFileParser.GetRoads(osmFile);
-                List<Area> areas = OsmFileParser.GetAreas(osmFile);
-
-                TerrainVisualizer.Instance.VisualizeTile(tile, roads, areas, originInMeters);
-                BarriersVisualizer.Instance.VisualizeTile(tile, osmFile, originInMeters);
-                MarkupVisualizer.Instance.VisualizeTile(tile, roads, originInMeters);
+                MultithreadedOsmFileParser osmFileParser = new MultithreadedOsmFileParser(tile, response);
+                osmFileParsers.Add(osmFileParser);
+                osmFileParser.Execute();
                 break;
             case NetworkManager.RequestType.GeoJSON:
-                FeatureCollection featureCollection = JsonConvert.DeserializeObject<FeatureCollection>(response);
-                BuildingsVisualizer.Instance.VisualizeTile(tile, featureCollection, originInMeters);
+                MultithreadedOsmGeoJSONParser osmGeoJSONParser = new MultithreadedOsmGeoJSONParser(tile, response);
+                osmGeoJSONParsers.Add(osmGeoJSONParser);
+                osmGeoJSONParser.Execute();
                 break;
-        }        
+        }
+        
+    }
+
+    private void VisualizeOsmFile(MultithreadedOsmFileParser osmFileParser)
+    {
+        TerrainVisualizer.Instance.VisualizeTile(osmFileParser.Tile, osmFileParser.Roads, osmFileParser.Areas, originInMeters);
+        BarriersVisualizer.Instance.VisualizeTile(osmFileParser.Tile, osmFileParser.OsmFile, originInMeters);
+        MarkupVisualizer.Instance.VisualizeTile(osmFileParser.Tile, osmFileParser.Roads, originInMeters);
+    }
+
+    private void VisualizeGeoJSON(MultithreadedOsmGeoJSONParser osmGeoJSONParser)
+    {
+        BuildingsVisualizer.Instance.VisualizeTile(osmGeoJSONParser.Tile, osmGeoJSONParser.FeatureCollection, originInMeters);
     }
 }

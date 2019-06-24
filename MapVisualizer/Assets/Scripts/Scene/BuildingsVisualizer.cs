@@ -1,5 +1,4 @@
 ﻿using BAMCIS.GeoJSON;
-using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -59,7 +58,20 @@ public class BuildingsVisualizer : Singleton<BuildingsVisualizer>
 
         float height = 0;
         InstantiateWalls(polygonLoops.OuterLoop, BuildingPropertiesHelper.GetNumberOfLevels(properties), out height);
-        InstantiateRoof(BuildingPropertiesHelper.GetRoofInfo(polygonLoops, height), RoofMaterial);
+
+        MeshInfo roofInfo;
+
+        try
+        {
+            roofInfo = BuildingPropertiesHelper.GetRoofInfo(polygonLoops, height);
+        }
+        catch
+        {
+            Debug.Log("Some roofs are not visualized.");
+            return;
+        }
+
+        InstantiateRoof(roofInfo, RoofMaterial);
     }
 
     private void InstantiateGeometryCollection(GeometryCollection geometryCollection, IDictionary<string, dynamic> properties, Tile tile,
@@ -93,7 +105,6 @@ public class BuildingsVisualizer : Singleton<BuildingsVisualizer>
     private void InstantiateFacade(Vector2[] points, float y, GameObject facadePrefab)
     {
         GameObject facadeContainer = Instantiate(FacadeContainer);
-        MeshRenderer facadeContainerRenderer = facadeContainer.GetComponent<MeshRenderer>();
 
         for (int i = 0; i < points.Length; i++)
         {
@@ -126,7 +137,6 @@ public class BuildingsVisualizer : Singleton<BuildingsVisualizer>
 
                 facade.transform.localScale = new Vector3(facadeWidth, facade.transform.localScale.y, facade.transform.localScale.z);
                 facade.transform.parent = facadeContainer.transform;
-                facadeContainerRenderer.materials = facade.GetComponent<MeshRenderer>().materials;
 
                 length -= facadeWidth;
                 point += direction3D * facadeWidth;
