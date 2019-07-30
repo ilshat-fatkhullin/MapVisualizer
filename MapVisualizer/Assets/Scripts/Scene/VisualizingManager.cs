@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Events;
 
 public class VisualizingManager : Singleton<VisualizingManager>
 {
@@ -9,18 +10,31 @@ public class VisualizingManager : Singleton<VisualizingManager>
 
     public int Zoom;
 
-    private Vector2 originInMeters;
+    public MultithreadedOsmFileParserEvent OnOsmFileParsed;
 
-    private Tile currentTile;
+    public MultithreadedOsmGeoJSONParserEvent OnGeoJSONParsed;
+
+    public TileEvent OnTileRemoved;
+
+    public Vector2 OriginInMeters { get; private set; }
+
+    public Tilemap Tilemap { get; private set; }
 
     private List<MultithreadedOsmFileParser> osmFileParsers;
 
     private List<MultithreadedOsmGeoJSONParser> osmGeoJSONParsers;
 
-    protected virtual void Start()
+    private void Awake()
     {
-        originInMeters = GeoPositioningHelper.GetMetersFromCoordinate(new Coordinate(OriginLatitude, OriginLongitude));
-        currentTile = new Tile(0, 0, 0);
+        OnOsmFileParsed = new MultithreadedOsmFileParserEvent();
+        OnGeoJSONParsed = new MultithreadedOsmGeoJSONParserEvent();
+        OnTileRemoved = new TileEvent();
+        Tilemap = new Tilemap(new Tile(0, 0, Zoom));
+    }
+
+    private void Start()
+    {
+        OriginInMeters = GeoPositioningHelper.GetMetersFromCoordinate(new Coordinate(OriginLatitude, OriginLongitude));        
 
         osmFileParsers = new List<MultithreadedOsmFileParser>();
         osmGeoJSONParsers = new List<MultithreadedOsmGeoJSONParser>();
@@ -31,24 +45,33 @@ public class VisualizingManager : Singleton<VisualizingManager>
     private void Update()
     {
         Vector2 cameraPositionInMeters = new Vector2(Camera.main.transform.position.x, Camera.main.transform.position.z);
-        cameraPositionInMeters += originInMeters;
+        cameraPositionInMeters += OriginInMeters;
         cameraPositionInMeters += new Vector2(-NumericConstants.TILE_SIZE, NumericConstants.TILE_SIZE);
 
         Tile currentTile = GeoPositioningHelper.GetTileFromCoordinate(
             GeoPositioningHelper.GetCoordinateFromMeters(cameraPositionInMeters),
             Zoom);
 
-        if (this.currentTile != currentTile)
+        if (Tilemap.CenterTile != currentTile)
         {
-            this.currentTile = currentTile;
-            DownloadTile(currentTile);
+            Tilemap.UpdateCenterTile(currentTile);            
         }
+
+        if (Tilemap.HasTilesToRemove())
+        {
+            OnTileRemoved.Invoke(Tilemap.DequeueTileToRemove());
+        }
+
+        if (Tilemap.HasTilesToVisualize())
+        {
+            DownloadAndVisualizeTile(Tilemap.DequeueTileToVisualize());
+        }        
 
         for (int i = 0; i < osmFileParsers.Count; i++)
         {
             if (osmFileParsers[i].IsCompleted)
             {
-                VisualizeOsmFile(osmFileParsers[i]);
+                OnOsmFileParsed.Invoke(osmFileParsers[i]);
                 osmFileParsers.RemoveAt(i);
                 break;
             }
@@ -58,14 +81,14 @@ public class VisualizingManager : Singleton<VisualizingManager>
         {
             if (osmGeoJSONParsers[i].IsCompleted)
             {
-                VisualizeGeoJSON(osmGeoJSONParsers[i]);
+                OnGeoJSONParsed.Invoke(osmGeoJSONParsers[i]);
                 osmGeoJSONParsers.RemoveAt(i);
                 break;
             }
         }
     }
 
-    private void DownloadTile(Tile tile)
+    private void DownloadAndVisualizeTile(Tile tile)
     {
         NetworkManager.Instance.DownloadTile(tile, NetworkManager.RequestType.GeoJSON);
         NetworkManager.Instance.DownloadTile(tile, NetworkManager.RequestType.OsmFile);        
@@ -88,16 +111,19 @@ public class VisualizingManager : Singleton<VisualizingManager>
         }
         
     }
+}
 
-    private void VisualizeOsmFile(MultithreadedOsmFileParser osmFileParser)
-    {
-        TerrainVisualizer.Instance.VisualizeTile(osmFileParser.Tile, osmFileParser.Roads, osmFileParser.Areas, originInMeters);
-        BarriersVisualizer.Instance.VisualizeTile(osmFileParser.Tile, osmFileParser.OsmFile, originInMeters);
-        MarkupVisualizer.Instance.VisualizeTile(osmFileParser.Tile, osmFileParser.Roads, originInMeters);
-    }
+public class MultithreadedOsmFileParserEvent : UnityEvent<MultithreadedOsmFileParser>
+{
 
-    private void VisualizeGeoJSON(MultithreadedOsmGeoJSONParser osmGeoJSONParser)
-    {
-        BuildingsVisualizer.Instance.VisualizeTile(osmGeoJSONParser.Tile, osmGeoJSONParser.FeatureCollection, originInMeters);
-    }
+}
+
+public class MultithreadedOsmGeoJSONParserEvent : UnityEvent<MultithreadedOsmGeoJSONParser>
+{
+
+}
+
+public class TileEvent : UnityEvent<Tile>
+{
+
 }

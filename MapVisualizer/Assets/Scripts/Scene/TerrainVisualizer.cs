@@ -17,14 +17,26 @@ public class TerrainVisualizer : Singleton<TerrainVisualizer>
 
     private Dictionary<string, int> nameToTerrainLayer;
 
-    private Vector2 terrainSize;
+    private Vector2 tileSizeInMeters;
 
     private List<MultithreadedTerrainPainter> painters;
 
+    private Dictionary<Tile, float[,,]> calculatedTiles;
+
+    private int tileAlphamapWidth;
+
     private void Start()
     {
+        calculatedTiles = new Dictionary<Tile, float[,,]>(new TileEqualityComparer());
         painters = new List<MultithreadedTerrainPainter>();
+
         InitializeNameToTerrainLayer();
+
+        VisualizingManager.Instance.OnOsmFileParsed.AddListener(VisualizeTile);
+        VisualizingManager.Instance.OnTileRemoved.AddListener(RemoveTile);
+        VisualizingManager.Instance.Tilemap.OnCenterTileChanged.AddListener(OnCenterTileChanged);
+
+        tileAlphamapWidth = Terrain.terrainData.alphamapWidth / 3;
     }
 
     private void Update()
@@ -33,30 +45,75 @@ public class TerrainVisualizer : Singleton<TerrainVisualizer>
         {
             if (painters[i].IsCompleted)
             {
-                Terrain.terrainData.SetAlphamaps(0, 0, painters[i].Alphamap);
+                if (calculatedTiles.ContainsKey(painters[i].Tile))
+                    continue;
+                calculatedTiles.Add(painters[i].Tile, painters[i].Alphamap);
+                SetTileAlphamap(painters[i].Tile, painters[i].Alphamap);
                 painters.RemoveAt(i);
                 break;
             }
         }
     }
 
-    public void VisualizeTile(Tile tile, List<Road> roads, List<Area> areas, Vector2 originInMeters)
+    private void SetTileAlphamap(Tile tile, float[,,] alphamap)
     {
-        UpdateTerrainTransform(tile, originInMeters);        
-        RetrieveRoads(roads, areas, originInMeters);
+        Tile centerTile = VisualizingManager.Instance.Tilemap.CenterTile;
+        Tile t = new Tile(tile.X - centerTile.X + 1, tile.Y - centerTile.Y + 1, tile.Zoom);
+        Terrain.terrainData.SetAlphamaps(t.X * tileAlphamapWidth, (2 - t.Y) * tileAlphamapWidth, alphamap);
+    }
+
+    private void OnCenterTileChanged()
+    {
+        Tile centerTile = VisualizingManager.Instance.Tilemap.CenterTile;
+        for (int x = centerTile.X - 1; x <= centerTile.X + 1; x++)
+            for (int y = centerTile.Y - 1; y <= centerTile.Y + 1; y++)
+            {
+                Tile tile = new Tile(x, y, centerTile.Zoom);
+                if (calculatedTiles.ContainsKey(tile))
+                {
+                    SetTileAlphamap(tile, calculatedTiles[tile]);
+                }
+            }
+    }
+
+    public void VisualizeTile(MultithreadedOsmFileParser parser)
+    {
+        UpdateTerrainTransform(VisualizingManager.Instance.Tilemap.CenterTile);
+        RetrieveRoads(parser.Tile, parser.Roads, parser.Areas);
 
         MultithreadedTerrainPainter painter = new MultithreadedTerrainPainter(
-            Terrain.terrainData.alphamapWidth, Terrain.terrainData.alphamapHeight,
-            Terrain.terrainData.alphamapLayers, terrainSize, roadsQueue, areasQueue,
-            nameToTerrainLayer);
+            tileAlphamapWidth, Terrain.terrainData.alphamapLayers, parser.Tile,
+            tileSizeInMeters, roadsQueue, areasQueue, nameToTerrainLayer);
 
         painters.Add(painter);
         painter.Execute();
     }
 
-    private void RetrieveRoads(List<Road> roads, List<Area> areas, Vector2 originInMeters)
+    public void RemoveTile(Tile tile)
+    {
+        for (int i = 0; i < painters.Count; i++)
+        {
+            if (painters[i].Tile == tile)
+            {
+                painters[i].Stop();
+                painters.RemoveAt(i);
+                i--;
+            }
+        }
+
+        if (!calculatedTiles.ContainsKey(tile))
+            return;
+        calculatedTiles.Remove(tile);            
+    }
+
+    private void RetrieveRoads(Tile tile, List<Road> roads, List<Area> areas)
     {        
-        Vector2 terrainOrigin = new Vector2(Terrain.transform.position.x, Terrain.transform.position.z);
+        Vector2 terrainOrigin = new Vector2(Terrain.transform.position.x,
+                                            Terrain.transform.position.z);
+
+        Tile centerTile = VisualizingManager.Instance.Tilemap.CenterTile;
+
+        terrainOrigin += new Vector2(tile.X - centerTile.X + 1, 1 - tile.Y + centerTile.Y) * Terrain.terrainData.size.x / 3f;
 
         roadsQueue = new PriorityQueue<Road>();
         areasQueue = new PriorityQueue<Area>();
@@ -64,27 +121,29 @@ public class TerrainVisualizer : Singleton<TerrainVisualizer>
         foreach (var road in roads)
         {
             roadsQueue.Enqueue(new Road(road.Lanes, road.Width,
-                road.GetNodesRelatedToOrigin(originInMeters + terrainOrigin),
+                road.GetNodesRelatedToOrigin(terrainOrigin + VisualizingManager.Instance.OriginInMeters),
                 road.Type));
         }
 
         foreach (var area in areas)
         {
-            areasQueue.Enqueue(new Area(area.GetNodesRelatedToOrigin(originInMeters + terrainOrigin), area.Type));
+            areasQueue.Enqueue(new Area(
+                area.GetNodesRelatedToOrigin(terrainOrigin + VisualizingManager.Instance.OriginInMeters), area.Type));
         }
     }
 
-    private void UpdateTerrainTransform(Tile tile, Vector2 originInMeters)
+    private void UpdateTerrainTransform(Tile centerTile)
     {
-        Terrain.Flush();
+        Vector2 nw = GeoPositioningHelper.GetMetersFromCoordinate(GeoPositioningHelper.GetNWCoordinateFromTile(centerTile));
+        Vector2 se = GeoPositioningHelper.GetMetersFromCoordinate(GeoPositioningHelper.GetNWCoordinateFromTile(new Tile(centerTile.X + 1, centerTile.Y + 1, centerTile.Zoom)));
 
-        Vector2 nw = GeoPositioningHelper.GetMetersFromCoordinate(GeoPositioningHelper.GetNWCoordinateFromTile(tile));
-        Vector2 se = GeoPositioningHelper.GetMetersFromCoordinate(GeoPositioningHelper.GetNWCoordinateFromTile(new Tile(tile.X + 1, tile.Y + 1, tile.Zoom)));
+        tileSizeInMeters = new Vector2(Math.Abs(nw.x - se.x), Math.Abs(nw.y - se.y));
 
-        terrainSize = new Vector2(Math.Abs(nw.x - se.x), Math.Abs(nw.y - se.y));
+        Vector2 position = (nw + se) / 2 - VisualizingManager.Instance.OriginInMeters;
 
-        Terrain.terrainData.size = new Vector3(terrainSize.x, Terrain.terrainData.size.y, terrainSize.y);
-        Terrain.gameObject.transform.position = new Vector3(nw.x - originInMeters.x, 0, se.y - originInMeters.y);
+        Terrain.terrainData.size = new Vector3(tileSizeInMeters.x * 3, Terrain.terrainData.size.y, tileSizeInMeters.y * 3);
+        Terrain.gameObject.transform.position = new Vector3(position.x - Terrain.terrainData.size.x / 2, 0,
+                                                            position.y - Terrain.terrainData.size.z / 2);
     }
 
     private void InitializeNameToTerrainLayer()

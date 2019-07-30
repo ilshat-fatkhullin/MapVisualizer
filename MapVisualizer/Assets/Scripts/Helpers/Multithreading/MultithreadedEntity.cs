@@ -23,5 +23,13 @@ public abstract class MultithreadedEntity
         thread.Start();
     }
 
+    public void Stop()
+    {
+        if (thread != null && thread.IsAlive)
+        {
+            thread.Abort();
+        }
+    }
+
     protected abstract void ExecuteThread();
 }

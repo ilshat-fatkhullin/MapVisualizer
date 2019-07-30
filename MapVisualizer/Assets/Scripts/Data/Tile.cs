@@ -1,4 +1,6 @@
-﻿public class Tile
+﻿using System.Collections.Generic;
+
+public class Tile
 {
     public int X { get; set; }
 
@@ -33,5 +35,26 @@
         if (a.X == b.X && a.Y == b.Y && a.Zoom == b.Zoom)
             return false;
         return true;
+    }
+}
+
+public class TileEqualityComparer : IEqualityComparer<Tile>
+{
+    public bool Equals(Tile tile1, Tile tile2)
+    {
+        if (tile2 == null && tile1 == null)
+            return true;
+        else if (tile1 == null || tile2 == null)
+            return false;
+        else if (tile1.X == tile2.X && tile1.Y == tile2.Y && tile1.Zoom == tile2.Zoom)
+            return true;
+        else
+            return false;
+    }
+
+    public int GetHashCode(Tile tile)
+    {
+        int hCode = tile.X ^ tile.Y ^ tile.Zoom;
+        return hCode.GetHashCode();
     }
 }

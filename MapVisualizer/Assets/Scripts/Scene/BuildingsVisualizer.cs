@@ -4,33 +4,38 @@ using UnityEngine;
 
 public class BuildingsVisualizer : Singleton<BuildingsVisualizer>
 {
-    public GameObject Roof;
+    public GameObject RoofPrefab;
+
+    public GameObject WallPrefab;
+
+    public Material WallMaterial;
 
     public Material RoofMaterial;
 
-    public GameObject FacadeContainer;
+    public GameObject FacadeContainerPrefab;
 
-    public GameObject[] BaseFacades;
+    public GameObject[] BaseFacadePrefabs;
 
-    public GameObject[] MiddleFacades;    
+    public GameObject[] MiddleFacadePrefabs;
 
-    private List<GameObject> buildings;
+    private GameObjectTilemap gameObjectTilemap; 
 
-    private void Awake()
+    private void Start()
     {
-        buildings = new List<GameObject>();
+        gameObjectTilemap = new GameObjectTilemap();
+        VisualizingManager.Instance.OnGeoJSONParsed.AddListener(VisualizeTile);
+        VisualizingManager.Instance.OnTileRemoved.AddListener(gameObjectTilemap.RemoveTile);
     }
 
-    public void VisualizeTile(Tile tile, FeatureCollection featureCollection, Vector2 originInMeters)
+    public void VisualizeTile(MultithreadedOsmGeoJSONParser parser)
     {
-        foreach (var building in buildings)
-        {
-            Destroy(building);
-        }        
+        if (parser.FeatureCollection == null)
+            return;
 
-        foreach (var feature in featureCollection.Features)
+        foreach (var feature in parser.FeatureCollection.Features)
         {
-            InstantiateGeometry(feature.Geometry, feature.Properties, tile, originInMeters);
+            InstantiateGeometry(feature.Geometry, feature.Properties, parser.Tile,
+                                VisualizingManager.Instance.OriginInMeters);
         }
     }
 
@@ -56,14 +61,28 @@ public class BuildingsVisualizer : Singleton<BuildingsVisualizer>
     {
         PolygonLoops polygonLoops = BuildingPropertiesHelper.GetPolygonLoopsInMeters(polygon, originInMeters);
 
-        float height = 0;
-        InstantiateWalls(polygonLoops.OuterLoop, BuildingPropertiesHelper.GetNumberOfLevels(properties), out height);
+        int levels = BuildingPropertiesHelper.GetNumberOfLevels(properties);
+        float height;
+
+        GameObject baseFacadePrefab = BaseFacadePrefabs[Random.Range(0, BaseFacadePrefabs.Length)];
+        GameObject middleFacadePrefab = MiddleFacadePrefabs[Random.Range(0, MiddleFacadePrefabs.Length)];
+
+        if (levels <= 1)
+        {
+            height = middleFacadePrefab.transform.localScale.y;
+        }
+        else
+        {
+            height = baseFacadePrefab.transform.localScale.y + middleFacadePrefab.transform.localScale.y * (levels - 1);
+        }
 
         MeshInfo roofInfo;
+        MeshInfo wallInfo;
 
         try
-        {
+        {            
             roofInfo = BuildingPropertiesHelper.GetRoofInfo(polygonLoops, height);
+            wallInfo = BuildingPropertiesHelper.GetWallInfo(polygonLoops, height);
         }
         catch
         {
@@ -71,7 +90,8 @@ public class BuildingsVisualizer : Singleton<BuildingsVisualizer>
             return;
         }
 
-        InstantiateRoof(roofInfo, RoofMaterial);
+        InstantiateObject(tile, roofInfo, RoofMaterial, RoofPrefab);
+        InstantiateWalls(tile, wallInfo, polygonLoops.OuterLoop, levels, baseFacadePrefab, middleFacadePrefab);
     }
 
     private void InstantiateGeometryCollection(GeometryCollection geometryCollection, IDictionary<string, dynamic> properties, Tile tile,
@@ -83,29 +103,44 @@ public class BuildingsVisualizer : Singleton<BuildingsVisualizer>
         }
     }
 
-    private void InstantiateWalls(Vector2[] points, int levels, out float y)
+    private void InstantiateWalls(Tile tile, MeshInfo wallInfo, Vector2[] points, int levels,
+                                  GameObject baseFacade, GameObject middleFacade)
     {
-        y = 0;
-        for (int i = 0; i < levels; i++)
+        GameObject wall = InstantiateObject(tile, wallInfo, WallMaterial, WallPrefab);
+
+        float y;
+
+        GameObject facadeContainer = Instantiate(FacadeContainerPrefab);
+        facadeContainer.transform.parent = wall.transform;
+
+        if (levels == 1)
         {
-            GameObject facade;
-            if (i == 0 && levels > 1)
-            {
-                facade = BaseFacades[UnityEngine.Random.Range(0, BaseFacades.Length)];
-            }
-            else
-            {
-                facade = MiddleFacades[UnityEngine.Random.Range(0, MiddleFacades.Length)];
-            }
-            InstantiateFacade(points, y + facade.transform.lossyScale.y / 2, facade);
-            y += facade.transform.lossyScale.y;
+            InstantiateFacade(tile, points, middleFacade.transform.lossyScale.y / 2,
+                                middleFacade, facadeContainer.transform);
+            return;
+        }
+        else
+        {
+            InstantiateFacade(tile, points, baseFacade.transform.lossyScale.y / 2,
+                                baseFacade, facadeContainer.transform);
+
+            facadeContainer = Instantiate(FacadeContainerPrefab);
+            facadeContainer.transform.parent = wall.transform;
+
+            y = baseFacade.transform.lossyScale.y;
+        }
+
+        for (int i = 1; i < levels; i++)
+        {
+            InstantiateFacade(tile, points, y + middleFacade.transform.lossyScale.y / 2,
+                                middleFacade, facadeContainer.transform);
+
+            y += middleFacade.transform.lossyScale.y;
         }
     }
 
-    private void InstantiateFacade(Vector2[] points, float y, GameObject facadePrefab)
+    private void InstantiateFacade(Tile tile, Vector2[] points, float y, GameObject facadePrefab, Transform parent)
     {
-        GameObject facadeContainer = Instantiate(FacadeContainer);
-
         for (int i = 0; i < points.Length; i++)
         {
             Vector2 pointA2D = points[i % points.Length];
@@ -136,19 +171,31 @@ public class BuildingsVisualizer : Singleton<BuildingsVisualizer>
                 GameObject facade = Instantiate(facadePrefab, point + direction3D * (facadeWidth / 2), rotation);
 
                 facade.transform.localScale = new Vector3(facadeWidth, facade.transform.localScale.y, facade.transform.localScale.z);
-                facade.transform.parent = facadeContainer.transform;
+                facade.transform.parent = parent;
 
                 length -= facadeWidth;
                 point += direction3D * facadeWidth;
             }            
-        }
-
-        buildings.Add(facadeContainer);
+        }        
     }
 
-    private void InstantiateRoof(MeshInfo info, Material material)
+    private GameObject InstantiateObject(Tile tile, MeshInfo info, Material material, GameObject prefab)
     {
-        GameObject building = Instantiate(Roof);
+        Vector3 position = Vector3.zero;
+
+        foreach (var v in info.Vertices)
+        {
+            position += v;
+        }
+
+        position /= info.Vertices.Length;
+
+        for (int i = 0; i < info.Vertices.Length; i++)
+        {
+            info.Vertices[i] -= position;
+        }
+
+        GameObject building = Instantiate(prefab, position, Quaternion.identity);        
         MeshFilter filter = building.GetComponent<MeshFilter>();
         Mesh mesh = new Mesh();
         mesh.vertices = info.Vertices;
@@ -161,6 +208,7 @@ public class BuildingsVisualizer : Singleton<BuildingsVisualizer>
         filter.mesh = mesh;
         MeshRenderer renderer = building.GetComponent<MeshRenderer>();
         renderer.material = material;
-        buildings.Add(building);
+        gameObjectTilemap.AttachObjectToTile(tile, building);
+        return building;
     }
 }

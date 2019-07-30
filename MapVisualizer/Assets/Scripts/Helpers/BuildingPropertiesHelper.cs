@@ -56,10 +56,8 @@ public static class BuildingPropertiesHelper
         return new MeshInfo(vertices3D, triangles.ToArray(), uvs);
     }
 
-    public static MeshInfo GetWallInfo(PolygonLoops polygonLoops, IDictionary<string, dynamic> properties)
+    public static MeshInfo GetWallInfo(PolygonLoops polygonLoops, float height)
     {
-        float height = GetHeightFromProperties(properties);
-
         List<int> triangles = new List<int>();
         List<Vector3> vertices = new List<Vector3>();
 

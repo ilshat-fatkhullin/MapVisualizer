@@ -6,13 +6,13 @@ public class MultithreadedTerrainPainter: MultithreadedEntity
 {
     public float[,,] Alphamap;
 
-    private int alphamapWidth;
+    public Tile Tile;
 
-    private int alphamapHeight;
+    private int alphamapWidth;   
 
-    private int alphamapLayers;
+    private int alphamapLayers;    
 
-    private Vector2 terrainSize;    
+    private Vector2 tileSizeInMeters;    
 
     private PriorityQueue<Road> roadsQueue;
 
@@ -20,14 +20,14 @@ public class MultithreadedTerrainPainter: MultithreadedEntity
 
     private Dictionary<string, int> nameToTerrainLayer;
 
-    public MultithreadedTerrainPainter(int alphamapWidth, int alphamapHeight, int alphamapLayers, Vector2 terrainSize,
-        PriorityQueue<Road> roadsQueue, PriorityQueue<Area> areasQueue, Dictionary<string, int> nameToTerrainLayer)
+    public MultithreadedTerrainPainter(int alphamapWidth, int alphamapLayers,
+        Tile tile, Vector2 tileSizeInMeters, PriorityQueue<Road> roadsQueue, PriorityQueue<Area> areasQueue,
+        Dictionary<string, int> nameToTerrainLayer)
     {
+        Tile = tile;
         this.alphamapWidth = alphamapWidth;
-        this.alphamapHeight = alphamapHeight;
         this.alphamapLayers = alphamapLayers;
-        this.terrainSize = terrainSize;
-        this.terrainSize = terrainSize;
+        this.tileSizeInMeters = tileSizeInMeters;
         this.roadsQueue = roadsQueue;
         this.areasQueue = areasQueue;
         this.nameToTerrainLayer = nameToTerrainLayer;
@@ -35,7 +35,7 @@ public class MultithreadedTerrainPainter: MultithreadedEntity
 
     protected override void ExecuteThread()
     {
-        Intmap surfaceIntmap = new Intmap(alphamapWidth, alphamapHeight);
+        Intmap surfaceIntmap = new Intmap(alphamapWidth, alphamapWidth);
 
         while (areasQueue.Count() > 0)
         {
@@ -72,7 +72,7 @@ public class MultithreadedTerrainPainter: MultithreadedEntity
             }
         }
 
-        Alphamap = new float[alphamapWidth, alphamapHeight, alphamapLayers];
+        Alphamap = new float[alphamapWidth, alphamapWidth, alphamapLayers];
 
         for (int layer = 0; layer < Alphamap.GetLength(2); layer++)
             for (int x = 0; x < Alphamap.GetLength(0); x++)
@@ -91,13 +91,13 @@ public class MultithreadedTerrainPainter: MultithreadedEntity
 
     private Point2D GetTerrainMapPoint(Vector2 coordinate)
     {
-        return new Point2D(Mathf.RoundToInt((coordinate.x / terrainSize.x) * alphamapWidth),
-                           Mathf.RoundToInt((coordinate.y / terrainSize.y) * alphamapHeight));
+        return new Point2D(Mathf.RoundToInt((coordinate.x / tileSizeInMeters.x) * alphamapWidth),
+                           Mathf.RoundToInt((coordinate.y / tileSizeInMeters.y) * alphamapWidth));
     }
 
     private int MetersToTerrainMapCells(float meters)
     {
-        return Mathf.RoundToInt(meters * alphamapWidth / terrainSize.x);
+        return Mathf.RoundToInt(meters * alphamapWidth / tileSizeInMeters.x);
     }
 
     private int GetTerrainLayerByName(string name)

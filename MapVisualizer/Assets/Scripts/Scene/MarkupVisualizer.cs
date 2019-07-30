@@ -10,33 +10,30 @@ public class MarkupVisualizer : Singleton<MarkupVisualizer>
     [Range(1f, 10f)]
     public float Step;
 
-    private List<GameObject> stripContainers;
+    private GameObjectTilemap gameObjectTilemap;
 
-    private void Awake()
+    private void Start()
     {
-        stripContainers = new List<GameObject>();
+        gameObjectTilemap = new GameObjectTilemap();
+        VisualizingManager.Instance.OnOsmFileParsed.AddListener(VisualizeTile);
+        VisualizingManager.Instance.OnTileRemoved.AddListener(gameObjectTilemap.RemoveTile);
     }
 
-    public void VisualizeTile(Tile tile, List<Road> roads, Vector2 originInMeters)
+    public void VisualizeTile(MultithreadedOsmFileParser parser)
     {
-        foreach (var strip in stripContainers)
-        {
-            Destroy(strip);
-        }
-
-        foreach (var road in roads)
+        foreach (var road in parser.Roads)
         {
             Road normalizedRoad = new Road(road.Lanes, road.Width,
-                road.GetNodesRelatedToOrigin(originInMeters), road.Type);
+                road.GetNodesRelatedToOrigin(VisualizingManager.Instance.OriginInMeters), road.Type);
 
             if (road.Type == Road.RoadType.Primary || road.Type == Road.RoadType.Secondary || road.Type == Road.RoadType.Tertiary)
             {
-                InstantiateMarkup(normalizedRoad);
+                InstantiateMarkup(parser.Tile, normalizedRoad);
             }
         }     
     }
 
-    private void InstantiateMarkup(Road road)
+    private void InstantiateMarkup(Tile tile, Road road)
     {
         for (int i = 1; i < road.Nodes.Length; i++)
         {            
@@ -56,14 +53,14 @@ public class MarkupVisualizer : Singleton<MarkupVisualizer>
                 point += direction2D * Step;
                 length -= Step;
 
-                InstantiateStripes(road.Lanes, road.GetRoadWidth(),
+                InstantiateStripes(tile, road.Lanes, road.GetRoadWidth(),
                     new Vector3(point.x, NumericConstants.ROAD_Y_OFFSET, point.y),
                     direction3D);
             }
         }
     }
 
-    private void InstantiateStripes(int lanes, float width, Vector3 point, Vector3 direction)
+    private void InstantiateStripes(Tile tile, int lanes, float width, Vector3 point, Vector3 direction)
     {
         Vector3 leftDirection = new Vector3(direction.z, direction.y, -direction.x);
 
@@ -83,6 +80,6 @@ public class MarkupVisualizer : Singleton<MarkupVisualizer>
             strip.transform.parent = stripsContainer.transform;         
         }
 
-        stripContainers.Add(stripsContainer);
+        gameObjectTilemap.AttachObjectToTile(tile, stripsContainer);
     }
 }

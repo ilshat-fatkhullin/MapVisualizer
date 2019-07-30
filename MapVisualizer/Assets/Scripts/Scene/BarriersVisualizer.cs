@@ -3,25 +3,24 @@ using UnityEngine;
 
 public class BarriersVisualizer : Singleton<BarriersVisualizer>
 {
+    public GameObject BarrierContainerPrefab;
+
     public GameObject KerbPrefab;
 
     public GameObject FencePrefab;
 
-    private List<GameObject> barriers;
+    private GameObjectTilemap gameObjectTilemap;
 
-    private void Awake()
+    private void Start()
     {
-        barriers = new List<GameObject>();
+        gameObjectTilemap = new GameObjectTilemap();
+        VisualizingManager.Instance.OnOsmFileParsed.AddListener(VisualizeTile);
+        VisualizingManager.Instance.OnTileRemoved.AddListener(gameObjectTilemap.RemoveTile);
     }
 
-    public void VisualizeTile(Tile tile, OsmFile file, Vector2 originInMeters)
+    public void VisualizeTile(MultithreadedOsmFileParser parser)
     {
-        foreach (var barrier in barriers)
-        {
-            Destroy(barrier);
-        }
-
-        foreach (var way in file.GetWays())
+        foreach (var way in parser.OsmFile.GetWays())
         {
             string barrierType = way.GetTagValue("barrier");
 
@@ -33,17 +32,19 @@ public class BarriersVisualizer : Singleton<BarriersVisualizer>
 
             for (int i = 0; i < nodes.Count; i++)
             {
-                points[i] = nodes[i].Coordinate - originInMeters;
+                points[i] = nodes[i].Coordinate - VisualizingManager.Instance.OriginInMeters;
             }
 
             Barrier barrier = new Barrier(points, Barrier.GetBarrierType(barrierType));
 
-            InstantiateBarrier(barrier);
+            InstantiateBarrier(parser.Tile, barrier);
         }
     }
 
-    public void InstantiateBarrier(Barrier barrier)
+    private void InstantiateBarrier(Tile tile, Barrier barrier)
     {
+        GameObject container = Instantiate(BarrierContainerPrefab);
+
         GameObject prefab = GetPrefabByBarrierType(barrier.Type);
 
         for (int i = 1; i < barrier.Points.Length; i++)
@@ -64,12 +65,14 @@ public class BarriersVisualizer : Singleton<BarriersVisualizer>
 
                 GameObject b = Instantiate(prefab, point + dir * (width / 2), rotation);
                 b.transform.localScale = new Vector3(width, b.transform.localScale.y, b.transform.localScale.z);
-                barriers.Add(b);
+                b.transform.parent = container.transform;
 
                 point += dir * width;
                 length -= width;
             }
         }
+
+        gameObjectTilemap.AttachObjectToTile(tile, container);
     }
 
     private GameObject GetPrefabByBarrierType(Barrier.BarrierType barrierType)

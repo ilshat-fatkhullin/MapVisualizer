@@ -13,12 +13,12 @@ public class MeshCombiner : MonoBehaviour
     private void CombineMeshes()
     {
         MeshFilter[] meshFilters = GetComponentsInChildren<MeshFilter>();
-        CombineInstance[] combine = new CombineInstance[meshFilters.Length];
+        CombineInstance[] combine = new CombineInstance[meshFilters.Length - 1];
         
-        for (int i = 0; i < meshFilters.Length; i++)
+        for (int i = 1; i < meshFilters.Length; i++)
         {
-            combine[i].mesh = meshFilters[i].sharedMesh;
-            combine[i].transform = meshFilters[i].transform.localToWorldMatrix;
+            combine[i - 1].mesh = meshFilters[i].sharedMesh;
+            combine[i - 1].transform = meshFilters[i].transform.localToWorldMatrix;
             meshFilters[i].gameObject.SetActive(false);
         }
 
@@ -27,6 +27,10 @@ public class MeshCombiner : MonoBehaviour
         meshFilter.mesh.CombineMeshes(combine);
         meshFilter.mesh.Optimize();
         GetComponent<MeshRenderer>().materials = meshFilters[meshFilters.Length - 1].GetComponent<MeshRenderer>().materials;
-        gameObject.SetActive(true);
+
+        for (int i = 1; i < meshFilters.Length; i++)
+        {            
+            Destroy(meshFilters[i].gameObject);
+        }
     }
 }
