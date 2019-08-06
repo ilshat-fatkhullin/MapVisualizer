@@ -94,8 +94,8 @@ LightmapSettings:
     m_PVRFilteringAtrousPositionSigmaDirect: 0.5
     m_PVRFilteringAtrousPositionSigmaIndirect: 2
     m_PVRFilteringAtrousPositionSigmaAO: 1
-    m_ShowResolutionOverlay: 1
     m_ExportTrainingData: 0
+    m_TrainingDataDestination: TrainingData
   m_LightingDataAsset: {fileID: 112000000, guid: d523547cfc90a0242a460690365db8e1,
     type: 2}
   m_UseShadowmask: 1
@@ -136,6 +136,7 @@ GameObject:
   - component: {fileID: 322427327}
   - component: {fileID: 322427330}
   - component: {fileID: 322427331}
+  - component: {fileID: 322427332}
   m_Layer: 0
   m_Name: GameController
   m_TagString: GameController
@@ -188,7 +189,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 322427324}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 83d45be99a2463c47a343fd6151c47d6, type: 3}
   m_Name: 
@@ -256,6 +257,32 @@ MonoBehaviour:
   DividingStripPrefab: {fileID: 5674711120760252329, guid: 67728a8f27c970e4a890467c9937ef07,
     type: 3}
   Step: 6
+--- !u!114 &322427332
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 322427324}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e9626568799a09a4e9618d73137c5489, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  SurfacePrefab: {fileID: 3284423268039205990, guid: 947c8a7d05dd6bd4ba36c773bebfb3ca,
+    type: 3}
+  MapWidth: 100
+  CellTextureResolution: 16
+  SurfaceLayers:
+  - Name: Default
+    Size: 1
+    Texture: {fileID: 2800000, guid: f9b51b75474e45f45b0ff0b6d49bdbab, type: 3}
+  - Name: Primary
+    Size: 1
+    Texture: {fileID: 2800000, guid: ddb8bda4c46e4cf4c8a1994a99dc71f1, type: 3}
+  - Name: Secondary
+    Size: 1
+    Texture: {fileID: 2800000, guid: ddb8bda4c46e4cf4c8a1994a99dc71f1, type: 3}
 --- !u!1 &384669485
 GameObject:
   m_ObjectHideFlags: 0
@@ -498,7 +525,7 @@ Terrain:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 878284369}
   m_Enabled: 1
-  serializedVersion: 4
+  serializedVersion: 5
   m_TerrainData: {fileID: 15600000, guid: 131ed21ad5f02ae41986cfeae4e40c5a, type: 2}
   m_TreeDistance: 5000
   m_TreeBillboardDistance: 50
@@ -511,15 +538,10 @@ Terrain:
   m_HeightmapMaximumLOD: 0
   m_ShadowCastingMode: 2
   m_DrawHeightmap: 1
-  m_DrawInstanced: 0
+  m_DrawInstanced: 1
   m_DrawTreesAndFoliage: 1
   m_ReflectionProbeUsage: 1
-  m_MaterialType: 0
-  m_LegacySpecular:
-    serializedVersion: 2
-    rgba: 4286545791
-  m_LegacyShininess: 0.078125
-  m_MaterialTemplate: {fileID: 0}
+  m_MaterialTemplate: {fileID: 2100000, guid: 94a7daa90ae779e4c9b2894e1e64db97, type: 2}
   m_BakeLightProbesForTrees: 1
   m_PreserveTreePrototypeLayers: 0
   m_DeringLightProbesForTrees: 1
