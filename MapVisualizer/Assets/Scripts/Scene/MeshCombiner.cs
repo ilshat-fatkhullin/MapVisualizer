@@ -18,7 +18,8 @@ public class MeshCombiner : MonoBehaviour
         for (int i = 1; i < meshFilters.Length; i++)
         {
             combine[i - 1].mesh = meshFilters[i].sharedMesh;
-            combine[i - 1].transform = meshFilters[i].transform.localToWorldMatrix;
+            meshFilters[i].transform.position -= transform.position;
+            combine[i - 1].transform = meshFilters[i].transform.localToWorldMatrix;            
             meshFilters[i].gameObject.SetActive(false);
         }
 
@@ -31,6 +32,6 @@ public class MeshCombiner : MonoBehaviour
         for (int i = 1; i < meshFilters.Length; i++)
         {            
             Destroy(meshFilters[i].gameObject);
-        }
+        }        
     }
 }

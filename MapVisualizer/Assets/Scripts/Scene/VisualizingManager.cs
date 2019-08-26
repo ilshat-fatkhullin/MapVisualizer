@@ -54,7 +54,25 @@ public class VisualizingManager : Singleton<VisualizingManager>
 
         if (Tilemap.CenterTile != currentTile)
         {
-            Tilemap.UpdateCenterTile(currentTile);            
+            Tilemap.UpdateCenterTile(currentTile);
+
+            for (int i = 0; i < osmFileParsers.Count; i++)
+            {
+                if (Tilemap.IsTileOnMap(osmFileParsers[i].Tile))
+                {                    
+                    osmFileParsers.RemoveAt(i);
+                    break;
+                }
+            }
+
+            for (int i = 0; i < osmGeoJSONParsers.Count; i++)
+            {
+                if (Tilemap.IsTileOnMap(osmGeoJSONParsers[i].Tile))
+                {
+                    osmGeoJSONParsers.RemoveAt(i);
+                    break;
+                }
+            }
         }
 
         if (Tilemap.HasTilesToRemove())
@@ -96,6 +114,9 @@ public class VisualizingManager : Singleton<VisualizingManager>
 
     private void OnNetworkResponse(Tile tile, NetworkManager.RequestType type, string response)
     {
+        if (!Tilemap.IsTileOnMap(tile))
+            return;
+
         switch (type)
         {
             case NetworkManager.RequestType.OsmFile:

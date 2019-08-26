@@ -101,9 +101,8 @@ public class TerrainVisualizer : Singleton<TerrainVisualizer>
             }
         }
 
-        if (!calculatedTiles.ContainsKey(tile))
-            return;
-        calculatedTiles.Remove(tile);            
+        if (calculatedTiles.ContainsKey(tile))            
+            calculatedTiles.Remove(tile);
     }
 
     private void RetrieveRoads(Tile tile, List<Road> roads, List<Area> areas)

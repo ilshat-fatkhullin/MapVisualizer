@@ -103,6 +103,14 @@ public class BuildingsVisualizer : Singleton<BuildingsVisualizer>
         }
     }
 
+    private GameObject InstantiateFacadeContainer(Transform parent)
+    {
+        GameObject facadeContainer = Instantiate(FacadeContainerPrefab);
+        facadeContainer.transform.parent = parent;
+        facadeContainer.transform.localPosition = Vector3.zero;
+        return facadeContainer;
+    }
+
     private void InstantiateWalls(Tile tile, MeshInfo wallInfo, Vector2[] points, int levels,
                                   GameObject baseFacade, GameObject middleFacade)
     {
@@ -110,8 +118,7 @@ public class BuildingsVisualizer : Singleton<BuildingsVisualizer>
 
         float y;
 
-        GameObject facadeContainer = Instantiate(FacadeContainerPrefab);
-        facadeContainer.transform.parent = wall.transform;
+        GameObject facadeContainer = InstantiateFacadeContainer(wall.transform);
 
         if (levels == 1)
         {
@@ -124,8 +131,7 @@ public class BuildingsVisualizer : Singleton<BuildingsVisualizer>
             InstantiateFacade(tile, points, baseFacade.transform.lossyScale.y / 2,
                                 baseFacade, facadeContainer.transform);
 
-            facadeContainer = Instantiate(FacadeContainerPrefab);
-            facadeContainer.transform.parent = wall.transform;
+            facadeContainer = InstantiateFacadeContainer(wall.transform);
 
             y = baseFacade.transform.lossyScale.y;
         }

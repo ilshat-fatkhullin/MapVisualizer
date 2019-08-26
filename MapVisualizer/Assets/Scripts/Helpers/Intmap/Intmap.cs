@@ -57,6 +57,9 @@ public class Intmap
             maxY = Math.Min(Mathf.Max(maxY, point.Y), Height - 1);
         }
 
+        Point2D pointA = new Point2D(),
+                pointB = new Point2D();
+
         for (int x = minX; x <= maxX; x++)
         {
             int y1 = maxY;
@@ -71,7 +74,13 @@ public class Intmap
                 }
             }
 
-            DrawLine(new Point2D(x, y1), new Point2D(x, y2), value, 1);
+            pointA.X = x;
+            pointA.Y = y1;
+
+            pointB.X = x;
+            pointB.Y = y2;
+
+            DrawLine(pointA, pointB, value, 1);
         }
     }
 

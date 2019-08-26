@@ -229,7 +229,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 322427324}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: cf04ccb462fad6249a5425db029e91ae, type: 3}
   m_Name: 
@@ -247,7 +247,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 322427324}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6bfec4395a520e643bd93149369aca08, type: 3}
   m_Name: 
@@ -269,20 +269,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e9626568799a09a4e9618d73137c5489, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  MapWidth: 100
   SurfacePrefab: {fileID: 3284423268039205990, guid: 947c8a7d05dd6bd4ba36c773bebfb3ca,
     type: 3}
-  MapWidth: 100
-  CellTextureResolution: 16
   SurfaceLayers:
   - Name: Default
-    Size: 1
-    Texture: {fileID: 2800000, guid: f9b51b75474e45f45b0ff0b6d49bdbab, type: 3}
+    Tiling: 1
+    Material: {fileID: 2100000, guid: 964433f9e92bb6b4684c4e0db3b37157, type: 2}
   - Name: Primary
-    Size: 1
-    Texture: {fileID: 2800000, guid: ddb8bda4c46e4cf4c8a1994a99dc71f1, type: 3}
+    Tiling: 1
+    Material: {fileID: 2100000, guid: 955b50d094c31e44894929a7ffd5bc43, type: 2}
   - Name: Secondary
-    Size: 1
-    Texture: {fileID: 2800000, guid: ddb8bda4c46e4cf4c8a1994a99dc71f1, type: 3}
+    Tiling: 1
+    Material: {fileID: 2100000, guid: 955b50d094c31e44894929a7ffd5bc43, type: 2}
 --- !u!1 &384669485
 GameObject:
   m_ObjectHideFlags: 0
@@ -536,7 +535,7 @@ Terrain:
   m_HeightmapPixelError: 5
   m_SplatMapDistance: 1000
   m_HeightmapMaximumLOD: 0
-  m_ShadowCastingMode: 2
+  m_ShadowCastingMode: 0
   m_DrawHeightmap: 1
   m_DrawInstanced: 1
   m_DrawTreesAndFoliage: 1

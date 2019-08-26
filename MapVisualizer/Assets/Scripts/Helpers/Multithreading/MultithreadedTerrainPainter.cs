@@ -73,20 +73,12 @@ public class MultithreadedTerrainPainter: MultithreadedEntity
         }
 
         Alphamap = new float[alphamapWidth, alphamapWidth, alphamapLayers];
-
-        for (int layer = 0; layer < Alphamap.GetLength(2); layer++)
-            for (int x = 0; x < Alphamap.GetLength(0); x++)
-                for (int y = 0; y < Alphamap.GetLength(1); y++)
-                {
-                    if (surfaceIntmap.Map[x, y] == layer)
-                    {
-                        Alphamap[y, x, layer] = 1;
-                    }
-                    else
-                    {
-                        Alphamap[y, x, layer] = 0;
-                    }
-                }
+        
+        for (int x = 0; x < Alphamap.GetLength(0); x++)
+            for (int y = 0; y < Alphamap.GetLength(1); y++)
+            {
+                Alphamap[y, x, surfaceIntmap.Map[x, y]] = 1;
+            }
     }
 
     private Point2D GetTerrainMapPoint(Vector2 coordinate)

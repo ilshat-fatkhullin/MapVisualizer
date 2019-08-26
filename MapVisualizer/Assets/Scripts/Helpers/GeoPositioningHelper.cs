@@ -24,6 +24,13 @@ public static class GeoPositioningHelper
         return new Tile(xTile, yTile , zoom);
     }
 
+    public static Vector2 GetTileSizeInMeters(Tile tile)
+    {
+        Vector2 nw = GetMetersFromCoordinate(GeoPositioningHelper.GetNWCoordinateFromTile(tile));
+        Vector2 se = GetMetersFromCoordinate(GeoPositioningHelper.GetNWCoordinateFromTile(new Tile(tile.X + 1, tile.Y + 1, tile.Zoom)));
+        return new Vector2(Math.Abs(nw.x - se.x), Math.Abs(nw.y - se.y));
+    }
+
     public static BBox GetBBoxFromTile(Tile tile)
     {        
         Coordinate p1 = GetNWCoordinateFromTile(tile);

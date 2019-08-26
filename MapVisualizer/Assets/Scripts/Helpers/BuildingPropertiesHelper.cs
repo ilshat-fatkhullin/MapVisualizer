@@ -13,7 +13,15 @@ public static class BuildingPropertiesHelper
 
         if (properties.ContainsKey("height"))
         {
-            float height = properties["height"];
+            float height;
+            try
+            {
+                height = properties["height"];
+            }
+            catch
+            {
+                height = NumericConstants.LEVEL_HEIGHT;
+            }
             return Mathf.RoundToInt(height / NumericConstants.LEVEL_HEIGHT);
         }
 

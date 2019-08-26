@@ -5,16 +5,21 @@ using UnityEngine;
 /// <summary>
 /// Paints all textures based on provided osm file
 /// </summary>
-public class SurfaceVisualizer : Singleton<TerrainVisualizer>
+public class SurfaceVisualizer : MonoBehaviour
 {
-    public GameObject SurfacePrefab;
+    public static SurfaceVisualizer Instance { get { return Singleton<SurfaceVisualizer>.Instance; } }
 
+    /// <summary>
+    /// Amount of cells per tile.
+    /// </summary>
     [Range(1, 100)]
     public int MapWidth;
 
-    [Range(16, 1024)]
-    public int CellTextureResolution;
+    public GameObject SurfacePrefab;
 
+    /// <summary>
+    /// Information about correspondance between layer and its material.
+    /// </summary>
     public SurfaceLayer[] SurfaceLayers;
 
     private Dictionary<string, Vector2> allNodes;
@@ -95,32 +100,35 @@ public class SurfaceVisualizer : Singleton<TerrainVisualizer>
 
     private void InstantiateTile(Tile tile, int[,] surfaceMap)
     {
-        Texture2D texture = new Texture2D(CellTextureResolution * MapWidth, CellTextureResolution * MapWidth);
+        SurfaceBuilder[] surfaceBuilders = new SurfaceBuilder[SurfaceLayers.Length];
 
-        for (int offsetX = 0; offsetX < MapWidth; offsetX += MapWidth)
-            for (int offsetY = 0; offsetY < MapWidth; offsetY += MapWidth)
+        for (int i = 0; i < surfaceBuilders.Length; i++)
+        {
+            SurfaceLayer surfaceLayer = SurfaceLayers[i];
+            surfaceBuilders[i] = new SurfaceBuilder(surfaceLayer.Material, surfaceLayer.Tiling);
+        }
+
+        for (int offsetX = 0; offsetX < MapWidth; offsetX++)
+            for (int offsetY = 0; offsetY < MapWidth; offsetY++)
             {
                 int layer = surfaceMap[offsetX, offsetY];
-                SurfaceLayer surfaceLayer = SurfaceLayers[layer];
-                float size = surfaceLayer.Size;
-
-                for (int i = 0; i < CellTextureResolution; i++)
-                    for (int j = 0; j < CellTextureResolution; j++)
-                    {
-                        int x = offsetX + i;
-                        int y = offsetY + j;
-                        
-                        Color color = surfaceLayer.Texture.GetPixelBilinear(x * size, y * size);
-                        texture.SetPixel(x, y, color);
-                    }
+                surfaceBuilders[layer].AddCell(new Point2D(offsetX, offsetY));
             }
+        
+        Vector2 position2D = GeoPositioningHelper.GetMetersFromCoordinate(GeoPositioningHelper.GetNWCoordinateFromTile(tile)) - VisualizingManager.Instance.OriginInMeters;
+        Vector3 position = new Vector3(position2D.x, 0, position2D.y);
+        Vector2 tileSize = GeoPositioningHelper.GetTileSizeInMeters(tile);
+        Vector3 objectSize = new Vector3(tileSize.x / MapWidth, 0, tileSize.y / MapWidth);
 
-        GameObject tileObject = Instantiate(SurfacePrefab);
-        tileObject.transform.localScale = Vector3.one * NumericConstants.TILE_SIZE;
-        tileObject.GetComponent<MeshRenderer>().material.mainTexture = texture;
-        Vector2 position = GeoPositioningHelper.GetMetersFromCoordinate(GeoPositioningHelper.GetNWCoordinateFromTile(tile)) - VisualizingManager.Instance.OriginInMeters;
-        tileObject.transform.position = new Vector3(position.x, 0, position.y);
-        gameObjectTilemap.AttachObjectToTile(tile, tileObject);
+        foreach (var builder in surfaceBuilders)
+        {
+            if (builder.IsEmpty())
+                continue;
+
+            GameObject tileObject = builder.Instantiate(position);            
+            tileObject.transform.localScale = objectSize;
+            gameObjectTilemap.AttachObjectToTile(tile, tileObject);
+        }
     }
 }
 
@@ -129,7 +137,7 @@ public struct SurfaceLayer
 {
     public string Name;
 
-    public float Size;
+    public float Tiling;
 
-    public Texture2D Texture;
+    public Material Material;
 }

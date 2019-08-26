@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using UnityEngine;
 using UnityEngine.Events;
 
 public class Tilemap
@@ -46,7 +47,7 @@ public class Tilemap
         for (int x = centerTile.X - 1; x <= centerTile.X + 1; x++)
             for (int y = centerTile.Y - 1; y <= centerTile.Y + 1; y++)
             {
-                if (visualizedTiles.Find(t => t.X == x && t.Y == y) != null)
+                if (visualizedTiles.Exists(t => t.X == x && t.Y == y))
                     continue;
                 tilesToVisualize.Enqueue(new Tile(x, y, centerTile.Zoom));
             }
@@ -85,5 +86,10 @@ public class Tilemap
     public Tile DequeueTileToRemove()
     {
         return tilesToRemove.Dequeue();
+    }
+
+    public bool IsTileOnMap(Tile tile)
+    {
+        return !(Mathf.Abs(CenterTile.X - tile.X) > 1 || Mathf.Abs(CenterTile.Y - tile.Y) > 1);
     }
 }
