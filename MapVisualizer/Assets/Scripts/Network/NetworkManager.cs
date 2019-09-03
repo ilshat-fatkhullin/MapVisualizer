@@ -38,7 +38,7 @@ public class NetworkManager: Singleton<NetworkManager>
 
         yield return www.SendWebRequest();
 
-        if (www.isNetworkError || www.isHttpError)
+        if (www.isNetworkError || www.isHttpError || www.isHttpError)
         {
             Debug.LogError(www.error);
         }

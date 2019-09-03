@@ -12,7 +12,7 @@ public class SurfaceVisualizer : MonoBehaviour
     /// <summary>
     /// Amount of cells per tile.
     /// </summary>
-    [Range(1, 100)]
+    [Range(1, 200)]
     public int MapWidth;
 
     public GameObject SurfacePrefab;
@@ -68,8 +68,9 @@ public class SurfaceVisualizer : MonoBehaviour
 
     private void RetrieveRoads(Tile tile, List<Road> roads, List<Area> areas)
     {
-        Tile centerTile = VisualizingManager.Instance.Tilemap.CenterTile;
-        Vector2 tileOrigin = new Vector2(tile.X - centerTile.X, tile.Y - centerTile.Y) * NumericConstants.TILE_SIZE;
+        Vector2 tileOrigin = GeoPositioningHelper.GetMetersFromCoordinate(
+            GeoPositioningHelper.GetNWCoordinateFromTile(
+                new Tile(tile.X, tile.Y + 1, tile.Zoom)));
 
         roadsQueue = new PriorityQueue<Road>();
         areasQueue = new PriorityQueue<Area>();
@@ -77,14 +78,14 @@ public class SurfaceVisualizer : MonoBehaviour
         foreach (var road in roads)
         {
             roadsQueue.Enqueue(new Road(road.Lanes, road.Width,
-                road.GetNodesRelatedToOrigin(tileOrigin + VisualizingManager.Instance.OriginInMeters),
+                road.GetNodesRelatedToOrigin(tileOrigin),
                 road.Type));
         }
 
         foreach (var area in areas)
         {
             areasQueue.Enqueue(new Area(
-                area.GetNodesRelatedToOrigin(tileOrigin + VisualizingManager.Instance.OriginInMeters), area.Type));
+                area.GetNodesRelatedToOrigin(tileOrigin), area.Type));
         }
     }
 
@@ -100,33 +101,38 @@ public class SurfaceVisualizer : MonoBehaviour
 
     private void InstantiateTile(Tile tile, int[,] surfaceMap)
     {
-        SurfaceBuilder[] surfaceBuilders = new SurfaceBuilder[SurfaceLayers.Length];
-
-        for (int i = 0; i < surfaceBuilders.Length; i++)
-        {
-            SurfaceLayer surfaceLayer = SurfaceLayers[i];
-            surfaceBuilders[i] = new SurfaceBuilder(surfaceLayer.Material, surfaceLayer.Tiling);
-        }
-
-        for (int offsetX = 0; offsetX < MapWidth; offsetX++)
-            for (int offsetY = 0; offsetY < MapWidth; offsetY++)
-            {
-                int layer = surfaceMap[offsetX, offsetY];
-                surfaceBuilders[layer].AddCell(new Point2D(offsetX, offsetY));
-            }
-        
-        Vector2 position2D = GeoPositioningHelper.GetMetersFromCoordinate(GeoPositioningHelper.GetNWCoordinateFromTile(tile)) - VisualizingManager.Instance.OriginInMeters;
-        Vector3 position = new Vector3(position2D.x, 0, position2D.y);
         Vector2 tileSize = GeoPositioningHelper.GetTileSizeInMeters(tile);
-        Vector3 objectSize = new Vector3(tileSize.x / MapWidth, 0, tileSize.y / MapWidth);
+        Vector2 position2D = GeoPositioningHelper.GetMetersFromCoordinate(GeoPositioningHelper.GetNWCoordinateFromTile(tile)) - VisualizingManager.Instance.OriginInMeters;
+        Vector3 position = new Vector3(position2D.x + tileSize.x / 2, 0, position2D.y - tileSize.y / 2);
+        Vector3 scale = new Vector3(tileSize.x, 0, tileSize.y) / 10;
 
-        foreach (var builder in surfaceBuilders)
+        for (int l = 0; l < SurfaceLayers.Length; l++)
         {
-            if (builder.IsEmpty())
-                continue;
 
-            GameObject tileObject = builder.Instantiate(position);            
-            tileObject.transform.localScale = objectSize;
+            Texture2D mask = new Texture2D(surfaceMap.GetLength(0), surfaceMap.GetLength(1));
+
+            for (int i = 0; i < surfaceMap.GetLength(0); i++)
+                for (int j = 0; j < surfaceMap.GetLength(1); j++)
+                {
+                    if (surfaceMap[surfaceMap.GetLength(0) - 1 - i, surfaceMap.GetLength(1) - 1 - j] == l)
+                    {
+                        mask.SetPixel(i, j, Color.white);
+                    }
+                    else
+                    {
+                        mask.SetPixel(i, j, Color.clear);
+                    }
+                }
+
+            mask.Apply();
+        
+            GameObject tileObject = Instantiate(SurfacePrefab);
+            Material material = tileObject.GetComponent<MeshRenderer>().material;
+            material.mainTextureScale = Vector2.one * SurfaceLayers[l].Tiling;
+            material.SetTexture("_MainTex", SurfaceLayers[l].Texture);
+            material.SetTexture("_Alpha", mask);
+            tileObject.transform.position = position;
+            tileObject.transform.localScale = scale;
             gameObjectTilemap.AttachObjectToTile(tile, tileObject);
         }
     }
@@ -139,5 +145,5 @@ public struct SurfaceLayer
 
     public float Tiling;
 
-    public Material Material;
+    public Texture Texture;
 }

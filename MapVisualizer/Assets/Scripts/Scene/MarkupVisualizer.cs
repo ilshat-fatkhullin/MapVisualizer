@@ -3,9 +3,11 @@ using UnityEngine;
 
 public class MarkupVisualizer : Singleton<MarkupVisualizer>
 {
-    public GameObject DividingStripContainerPrefab;
-
     public GameObject DividingStripPrefab;
+
+    public float Width;
+
+    public float Length;
 
     [Range(1f, 10f)]
     public float Step;
@@ -48,38 +50,55 @@ public class MarkupVisualizer : Singleton<MarkupVisualizer>
             Vector3 direction3D = new Vector3(direction2D.x, 0, direction2D.y);
             Vector2 point = point1;
 
+            Mesh mesh = CreateMesh(road.Lanes, road.GetRoadWidth());
+
             while (length >= Step)
             {
                 point += direction2D * Step;
                 length -= Step;
 
-                InstantiateStripes(tile, road.Lanes, road.GetRoadWidth(),
-                    new Vector3(point.x, NumericConstants.ROAD_Y_OFFSET, point.y),
-                    direction3D);
+                InstantiateStripes(tile, mesh, new Vector3(point.x, NumericConstants.ROAD_Y_OFFSET, point.y), direction3D);
             }
         }
     }
 
-    private void InstantiateStripes(Tile tile, int lanes, float width, Vector3 point, Vector3 direction)
+    private Mesh CreateMesh(int lanes, float width)
     {
-        Vector3 leftDirection = new Vector3(direction.z, direction.y, -direction.x);
+        Vector3 leftPoint = Vector3.left * (width / 2f);
+        Vector3 rightPoint = Vector3.right * (width / 2f);
 
-        Vector3 leftPoint = point + leftDirection * (width / 2f);
-        Vector3 rightPoint = point - leftDirection * (width / 2f);
-
-        Quaternion rotation =  Quaternion.LookRotation(direction);
-
-        GameObject stripsContainer = Instantiate(DividingStripContainerPrefab);
+        List<Vector3> vertices = new List<Vector3>();
+        List<int> triangles = new List<int>();
 
         for (int i = 1; i < lanes; i++)
         {
-            GameObject strip = Instantiate(DividingStripPrefab,
-                       Vector3.Lerp(leftPoint, rightPoint, (float)i / lanes),
-                       rotation);
+            Vector3 position = Vector3.Lerp(leftPoint, rightPoint, (float)i / lanes);
 
-            strip.transform.parent = stripsContainer.transform;         
+            vertices.Add(position + Vector3.left * Width + Vector3.back * Length);
+            vertices.Add(position + Vector3.left * Width + Vector3.forward * Length);
+            vertices.Add(position + Vector3.right * Width + Vector3.back * Length);
+            vertices.Add(position + Vector3.right * Width + Vector3.forward * Length);
+
+            triangles.Add(vertices.Count - 4);
+            triangles.Add(vertices.Count - 3);
+            triangles.Add(vertices.Count - 1);
+            triangles.Add(vertices.Count - 4);
+            triangles.Add(vertices.Count - 1);
+            triangles.Add(vertices.Count - 2);
         }
 
-        gameObjectTilemap.AttachObjectToTile(tile, stripsContainer);
+        Mesh mesh = new Mesh();
+        mesh.vertices = vertices.ToArray();
+        mesh.triangles = triangles.ToArray();
+        mesh.SetUVs(0, vertices);
+        mesh.RecalculateNormals();
+        return mesh;
+    }
+
+    private void InstantiateStripes(Tile tile, Mesh mesh, Vector3 point, Vector3 direction)
+    {
+        GameObject strip = Instantiate(DividingStripPrefab , point, Quaternion.LookRotation(direction));
+        strip.GetComponent<MeshFilter>().mesh = mesh;
+        gameObjectTilemap.AttachObjectToTile(tile, strip);
     }
 }

@@ -162,12 +162,6 @@ MonoBehaviour:
     type: 3}
   WallMaterial: {fileID: 2100000, guid: 0a582a9f621d95046a188fa43e0c0110, type: 2}
   RoofMaterial: {fileID: 2100000, guid: 37da190aea7952541a269873de7bf3cf, type: 2}
-  FacadeContainerPrefab: {fileID: 3391367350425759653, guid: 4e0c03eec5bd512469c62b5d8b9f7fd7,
-    type: 3}
-  BaseFacadePrefabs:
-  - {fileID: 7106796843414558913, guid: 484fe57f9075b0748ba2b8ce65e7412b, type: 3}
-  MiddleFacadePrefabs:
-  - {fileID: 131651182578465364, guid: 0453e3ff26355324e840afdb22f1d141, type: 3}
 --- !u!4 &322427326
 Transform:
   m_ObjectHideFlags: 0
@@ -189,7 +183,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 322427324}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 83d45be99a2463c47a343fd6151c47d6, type: 3}
   m_Name: 
@@ -247,15 +241,15 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 322427324}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6bfec4395a520e643bd93149369aca08, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  DividingStripContainerPrefab: {fileID: 1200895899842300547, guid: 6deb5f8e56bbcdc46a0169e0fdf7e942,
-    type: 3}
   DividingStripPrefab: {fileID: 5674711120760252329, guid: 67728a8f27c970e4a890467c9937ef07,
     type: 3}
+  Width: 0.2
+  Length: 1
   Step: 6
 --- !u!114 &322427332
 MonoBehaviour:
@@ -264,24 +258,45 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 322427324}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e9626568799a09a4e9618d73137c5489, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  MapWidth: 100
+  MapWidth: 200
   SurfacePrefab: {fileID: 3284423268039205990, guid: 947c8a7d05dd6bd4ba36c773bebfb3ca,
     type: 3}
   SurfaceLayers:
   - Name: Default
-    Tiling: 1
-    Material: {fileID: 2100000, guid: 964433f9e92bb6b4684c4e0db3b37157, type: 2}
+    Tiling: 200
+    Texture: {fileID: 2800000, guid: f9b51b75474e45f45b0ff0b6d49bdbab, type: 3}
   - Name: Primary
-    Tiling: 1
-    Material: {fileID: 2100000, guid: 955b50d094c31e44894929a7ffd5bc43, type: 2}
+    Tiling: 200
+    Texture: {fileID: 2800000, guid: ddb8bda4c46e4cf4c8a1994a99dc71f1, type: 3}
   - Name: Secondary
-    Tiling: 1
-    Material: {fileID: 2100000, guid: 955b50d094c31e44894929a7ffd5bc43, type: 2}
+    Tiling: 200
+    Texture: {fileID: 2800000, guid: ddb8bda4c46e4cf4c8a1994a99dc71f1, type: 3}
+  - Name: Tertiary
+    Tiling: 200
+    Texture: {fileID: 2800000, guid: ddb8bda4c46e4cf4c8a1994a99dc71f1, type: 3}
+  - Name: Residential
+    Tiling: 10
+    Texture: {fileID: 2800000, guid: ddb8bda4c46e4cf4c8a1994a99dc71f1, type: 3}
+  - Name: Pedestrian
+    Tiling: 200
+    Texture: {fileID: 2800000, guid: a7f7aa11f163f0241a2afa0fa1040155, type: 3}
+  - Name: Footway
+    Tiling: 200
+    Texture: {fileID: 2800000, guid: 6186031503eff3c4da089520cbfdf3f5, type: 3}
+  - Name: Grass
+    Tiling: 200
+    Texture: {fileID: 2800000, guid: 763788560e5ff304fb1dd0fc197bb5bd, type: 3}
+  - Name: Park
+    Tiling: 200
+    Texture: {fileID: 2800000, guid: 763788560e5ff304fb1dd0fc197bb5bd, type: 3}
+  - Name: Garden
+    Tiling: 200
+    Texture: {fileID: 2800000, guid: 763788560e5ff304fb1dd0fc197bb5bd, type: 3}
 --- !u!1 &384669485
 GameObject:
   m_ObjectHideFlags: 0
@@ -316,7 +331,7 @@ Light:
   m_InnerSpotAngle: 21.80208
   m_CookieSize: 10
   m_Shadows:
-    m_Type: 0
+    m_Type: 1
     m_Resolution: -1
     m_CustomResolution: -1
     m_Strength: 1
@@ -349,7 +364,7 @@ Light:
     serializedVersion: 2
     m_Bits: 4294967295
   m_RenderingLayerMask: 1
-  m_Lightmapping: 4
+  m_Lightmapping: 1
   m_LightShadowCasterMode: 0
   m_AreaSize: {x: 1, y: 1}
   m_BounceIntensity: 1
@@ -504,7 +519,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 4294967295
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!154 &878284370
 TerrainCollider:
   m_ObjectHideFlags: 0

@@ -11,4 +11,6 @@
     public const float ROAD_Y_OFFSET = 0.025f;
 
     public const float ROAD_SPLINE_STEP = 0.25f;
+
+    public const int MAX_NUMBER_OF_VERTICES = 65532;
 }

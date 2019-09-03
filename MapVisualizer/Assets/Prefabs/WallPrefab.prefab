@@ -11,7 +11,6 @@ GameObject:
   - component: {fileID: 3478557176608668103}
   - component: {fileID: 9133427646307277995}
   - component: {fileID: 1357232643167839969}
-  - component: {fileID: 8631358456712089827}
   m_Layer: 0
   m_Name: WallPrefab
   m_TagString: Untagged
@@ -79,17 +78,3 @@ MeshRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
---- !u!114 &8631358456712089827
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6411184874866389261}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 669f9b594245d8b4fae6039bcc020f9c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  MeshRenderer: {fileID: 1357232643167839969}
-  LODSwitchDistance: 300

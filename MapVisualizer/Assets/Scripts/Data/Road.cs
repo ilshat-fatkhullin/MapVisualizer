@@ -98,7 +98,7 @@ public class Road: Surface, IComparable<Road>
             case RoadType.Road:
                 return NumericConstants.ROAD_LANE_WIDTH;
             case RoadType.Footway:
-                return NumericConstants.ROAD_LANE_WIDTH;
+                return NumericConstants.ROAD_LANE_WIDTH * 2;
             case RoadType.Bridleway:
                 return NumericConstants.ROAD_LANE_WIDTH;
             case RoadType.Steps:

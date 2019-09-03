@@ -1,25 +1,28 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
+using UnityEngine;
 
 [RequireComponent(typeof(MeshRenderer))]
 [RequireComponent(typeof(MeshFilter))]
 public class MeshCombiner : MonoBehaviour
 {
-    private void OnBecameVisible()
+    List<Mesh> meshes = new List<Mesh>();
+    List<MeshFilter> meshFilters = new List<MeshFilter>();
+
+    public void AddMesh(Mesh mesh, MeshFilter meshFilter)
     {
-        CombineMeshes();
-        Destroy(this);
+        meshes.Add(mesh);
+        meshFilters.Add(meshFilter);
     }
 
-    private void CombineMeshes()
+    public void CombineMeshes()
     {
-        MeshFilter[] meshFilters = GetComponentsInChildren<MeshFilter>();
-        CombineInstance[] combine = new CombineInstance[meshFilters.Length - 1];
+        CombineInstance[] combine = new CombineInstance[meshFilters.Count];
         
-        for (int i = 1; i < meshFilters.Length; i++)
+        for (int i = 0; i < meshFilters.Count; i++)
         {
-            combine[i - 1].mesh = meshFilters[i].sharedMesh;
+            combine[i].mesh = meshFilters[i].sharedMesh;
             meshFilters[i].transform.position -= transform.position;
-            combine[i - 1].transform = meshFilters[i].transform.localToWorldMatrix;            
+            combine[i].transform = meshFilters[i].transform.localToWorldMatrix;            
             meshFilters[i].gameObject.SetActive(false);
         }
 
@@ -27,9 +30,9 @@ public class MeshCombiner : MonoBehaviour
         meshFilter.mesh = new Mesh();
         meshFilter.mesh.CombineMeshes(combine);
         meshFilter.mesh.Optimize();
-        GetComponent<MeshRenderer>().materials = meshFilters[meshFilters.Length - 1].GetComponent<MeshRenderer>().materials;
+        GetComponent<MeshRenderer>().materials = meshFilters[meshFilters.Count - 1].GetComponent<MeshRenderer>().materials;
 
-        for (int i = 1; i < meshFilters.Length; i++)
+        for (int i = 0; i < meshFilters.Count; i++)
         {            
             Destroy(meshFilters[i].gameObject);
         }        

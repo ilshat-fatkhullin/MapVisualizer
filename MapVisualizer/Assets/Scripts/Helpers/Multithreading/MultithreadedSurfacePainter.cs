@@ -8,6 +8,8 @@ public class MultithreadedSurfacePainter : MultithreadedEntity
 
     public Tile Tile;
 
+    private Vector2 tileSizeInMeters;
+
     private int mapWidth;
 
     private PriorityQueue<Road> roadsQueue;
@@ -21,6 +23,7 @@ public class MultithreadedSurfacePainter : MultithreadedEntity
         Dictionary<string, int> nameToTerrainLayer)
     {
         Tile = tile;
+        tileSizeInMeters = GeoPositioningHelper.GetTileSizeInMeters(tile);
         this.mapWidth = mapWidth;
         this.roadsQueue = roadsQueue;
         this.areasQueue = areasQueue;
@@ -71,13 +74,13 @@ public class MultithreadedSurfacePainter : MultithreadedEntity
 
     private Point2D GetSurfaceMapCell(Vector2 coordinate)
     {
-        return new Point2D(Mathf.RoundToInt((coordinate.x / NumericConstants.TILE_SIZE) * mapWidth),
-                           Mathf.RoundToInt((coordinate.y / NumericConstants.TILE_SIZE) * mapWidth));
+        return new Point2D(Mathf.RoundToInt((coordinate.x / tileSizeInMeters.x) * mapWidth),
+                           Mathf.RoundToInt((coordinate.y / tileSizeInMeters.y) * mapWidth));
     }
 
     private int MetersToSurfaceMapCells(float meters)
     {
-        return Mathf.RoundToInt(meters * mapWidth / NumericConstants.TILE_SIZE);
+        return Mathf.RoundToInt(meters * mapWidth / tileSizeInMeters.x);
     }
 
     private int GetSurfaceLayerByName(string name)

@@ -24,9 +24,7 @@ public class SurfaceBuilder
         vertices.Add(new Vector3(cell.X, 0, cell.Y));
         vertices.Add(new Vector3(cell.X, 0, cell.Y + 1));
         vertices.Add(new Vector3(cell.X + 1, 0, cell.Y + 1));
-        vertices.Add(new Vector3(cell.X + 1, 0, cell.Y));
-
-        
+        vertices.Add(new Vector3(cell.X + 1, 0, cell.Y));        
 
         triangles.Add(vertices.Count - 4);
         triangles.Add(vertices.Count - 3);
@@ -41,11 +39,42 @@ public class SurfaceBuilder
         return vertices.Count == 0 || triangles.Count == 0;
     }
 
-    public GameObject Instantiate(Vector3 position)
-    {        
+    public List<GameObject> Instantiate(Vector3 position)
+    {
+        List<GameObject> surfaces = new List<GameObject>();
+
+        int tCounter = 0;
+
+        for (int r = 0; r < Mathf.CeilToInt(vertices.Count / (float)NumericConstants.MAX_NUMBER_OF_VERTICES); r++)
+        {
+            int offset = r * NumericConstants.MAX_NUMBER_OF_VERTICES;
+
+            Vector3[] v = new Vector3[Mathf.Min(NumericConstants.MAX_NUMBER_OF_VERTICES, vertices.Count - offset)];
+
+            for (int i = 0; i < v.Length; i++)
+            {
+                v[i] = vertices[i + offset];
+            }
+
+            int[] t = new int[v.Length * 3 / 2];
+
+            for (int i = 0; i < t.Length; i++)
+            {
+                t[i] = triangles[tCounter] - offset;
+                tCounter++;
+            }
+
+            surfaces.Add(InstantiateSurface(position, v, t));
+        }
+
+        return surfaces;
+    }
+
+    private GameObject InstantiateSurface(Vector3 position, Vector3[] vertices, int[] triangles)
+    {
         Mesh mesh = new Mesh();
-        mesh.vertices = vertices.ToArray();
-        mesh.triangles = triangles.ToArray();
+        mesh.vertices = vertices;
+        mesh.triangles = triangles;
 
         Vector2[] uv = new Vector2[mesh.vertices.Length];
         for (int i = 0; i < uv.Length; i++)
@@ -55,6 +84,8 @@ public class SurfaceBuilder
 
         mesh.uv = uv;
         mesh.RecalculateNormals();
+        mesh.RecalculateTangents();
+        mesh.Optimize();
 
         var surface = Object.Instantiate(SurfaceVisualizer.Instance.SurfacePrefab, position, Quaternion.identity);
         surface.GetComponent<MeshFilter>().mesh = mesh;
